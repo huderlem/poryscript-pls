@@ -1,6 +1,6 @@
 # poryscript-pls
 
-The programming language server for [Poryscript](https://github.com/huderlem/poryscript). **This is in very early development.**
+The language server for [Poryscript](https://github.com/huderlem/poryscript). **This is in very early development.**
 
 ## Local Development Setup
 
