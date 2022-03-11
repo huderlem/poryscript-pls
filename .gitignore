@@ -17,6 +17,9 @@
 # Go workspace file
 go.work
 
+# Delve output
+__debug_bin
+
 
 #################
 # VS Code Items #

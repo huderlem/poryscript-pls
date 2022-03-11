@@ -8,6 +8,7 @@ import (
 
 	"github.com/huderlem/poryscript-pls/config"
 	"github.com/huderlem/poryscript-pls/lsp"
+	"github.com/huderlem/poryscript-pls/parse"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
@@ -52,8 +53,9 @@ func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn,
 // poryscriptServer is the main handler for the Poryscript LSP server. It implements the
 // LspServer interface.
 type poryscriptServer struct {
-	connection *jsonrpc2.Conn
-	config     config.Config
+	connection     *jsonrpc2.Conn
+	config         config.Config
+	cachedCommands map[string][]parse.Command
 }
 
 // Runs the LSP server indefinitely.
@@ -100,20 +102,24 @@ func (s *poryscriptServer) onInitialized(ctx context.Context) error {
 // Handles an incoming LSP 'textDocument/completion' request.
 // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_completion
 func (s *poryscriptServer) onCompletion(ctx context.Context, req lsp.CompletionParams) ([]lsp.CompletionItem, error) {
-	return []lsp.CompletionItem{{
-		Label:  "first",
-		Kind:   lsp.CIKText,
-		Detail: "Testing first...",
-		Data:   1,
-	}, {
-		Label:  "first",
-		Kind:   lsp.CIKFunction,
-		Detail: "Testing first function...",
-		Data:   2,
-	}, {
-		Label:  "third",
-		Kind:   lsp.CIKText,
-		Detail: "Testing third...",
-		Data:   3,
-	}}, nil
+	settings, err := s.config.GetFileSettings(ctx, s.connection, string(req.TextDocument.URI))
+	if err != nil {
+		return []lsp.CompletionItem{}, nil
+	}
+	// Aggregate a slice of Commands from all of the relevant files.
+	commands := []parse.Command{}
+	for _, includeFilepath := range settings.CommandIncludes {
+		fileCommands, err := s.getCommands(ctx, includeFilepath)
+		if err != nil {
+			// TODO: log error? we don't want to fail if a single file resulted in an error.
+			continue
+		}
+		commands = append(commands, fileCommands...)
+	}
+	commands = append(commands, parse.KeywordCommands...)
+	completionItems := make([]lsp.CompletionItem, len(commands))
+	for i, command := range commands {
+		completionItems[i] = command.ToCompletionItem()
+	}
+	return completionItems, nil
 }

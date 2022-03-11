@@ -10,7 +10,7 @@ import (
 
 // Configuration for the Poryscript language server.
 type Config struct {
-	ResourceSettings                   map[string]PoryscriptSettings
+	FileSettings                       map[string]PoryscriptSettings
 	HasConfigCapability                bool
 	HasWorkspaceFolderCapability       bool
 	HasDiagnosticRelatedInfoCapability bool
@@ -38,38 +38,38 @@ var defaultPoryscriptSettings = PoryscriptSettings{
 
 func New() Config {
 	return Config{
-		ResourceSettings:                   map[string]PoryscriptSettings{},
+		FileSettings:                       map[string]PoryscriptSettings{},
 		HasConfigCapability:                false,
 		HasWorkspaceFolderCapability:       false,
 		HasDiagnosticRelatedInfoCapability: false,
 	}
 }
 
-// GetResourceSettings retrieves the PoryscriptSettings associated with the given resource.
+// GetFileSettings retrieves the PoryscriptSettings associated with the given file.
 // If the client doesn't support configuration, it returns the default settings.
-// Settings are cached on a resource-by-resource basis..
-func (c *Config) GetResourceSettings(ctx context.Context, conn jsonrpc2.JSONRPC2, resource string) (PoryscriptSettings, error) {
+// Settings are cached on a filepath-by-filepath basis..
+func (c *Config) GetFileSettings(ctx context.Context, conn jsonrpc2.JSONRPC2, filepath string) (PoryscriptSettings, error) {
 	if !c.HasConfigCapability {
 		return defaultPoryscriptSettings, nil
 	}
-	if settings, ok := c.ResourceSettings[resource]; ok {
+	if settings, ok := c.FileSettings[filepath]; ok {
 		return settings, nil
 	}
-	settings, err := c.fetchResourceSettings(ctx, conn, resource)
+	settings, err := c.fetchFileSettings(ctx, conn, filepath)
 	if err != nil {
 		return PoryscriptSettings{}, err
 	}
-	c.ResourceSettings[resource] = settings
+	c.FileSettings[filepath] = settings
 	return settings, nil
 }
 
-// Fetches the configuration from the client for the given resource.
-func (c *Config) fetchResourceSettings(ctx context.Context, conn jsonrpc2.JSONRPC2, resource string) (PoryscriptSettings, error) {
+// Fetches the configuration from the client for the given file.
+func (c *Config) fetchFileSettings(ctx context.Context, conn jsonrpc2.JSONRPC2, filepath string) (PoryscriptSettings, error) {
 	params := lsp.ConfigurationParams{
 		Items: []lsp.ConfigurationItem{
 			{
-				// ScopeURI: resource,
-				Section: "languageServerPoryscript",
+				ScopeURI: filepath,
+				Section:  "languageServerPoryscript",
 			},
 		},
 	}
