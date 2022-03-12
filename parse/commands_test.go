@@ -8,6 +8,49 @@ import (
 	"github.com/huderlem/poryscript-pls/lsp"
 )
 
+func TestCommandToCompletionItem(t *testing.T) {
+	tests := []struct {
+		input    Command
+		expected lsp.CompletionItem
+	}{
+		{
+			input:    Command{},
+			expected: lsp.CompletionItem{Kind: lsp.CIKKeyword},
+		},
+		{
+			input: Command{
+				Name:          "foo",
+				Documentation: "the doc",
+				Detail:        "the detail",
+			},
+			expected: lsp.CompletionItem{Label: "foo", Documentation: "the doc", Detail: "the detail", Kind: lsp.CIKKeyword},
+		},
+		{
+			input: Command{
+				Name:          "baz",
+				Kind:          lsp.CIKFunction,
+				Documentation: "doc 2",
+				Detail:        "detail 2",
+			},
+			expected: lsp.CompletionItem{Label: "baz", Documentation: "doc 2", Detail: "detail 2", Kind: lsp.CIKFunction},
+		},
+		{
+			input: Command{
+				Name:       "baz",
+				Kind:       lsp.CIKFunction,
+				InsertText: "insert me",
+			},
+			expected: lsp.CompletionItem{Label: "baz", Kind: lsp.CIKFunction, InsertText: "insert me", InsertTextFormat: lsp.ITFSnippet},
+		},
+	}
+	for i, tt := range tests {
+		result := tt.input.ToCompletionItem()
+		if !reflect.DeepEqual(result, tt.expected) {
+			t.Fatalf("Test Case %d:\nExpected:\n%v\n\nGot:\n%v", i, tt.expected, result)
+		}
+	}
+}
+
 func TestParseMacroCommands(t *testing.T) {
 	input := `
 @ Buffers the given text and calls the relevant standard message script (see gStdScripts).

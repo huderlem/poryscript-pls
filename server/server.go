@@ -18,7 +18,9 @@ type LspServer interface {
 
 func New() LspServer {
 	server := poryscriptServer{
-		config: config.New(),
+		config:          config.New(),
+		cachedCommands:  map[string][]parse.Command{},
+		cachedConstants: map[string][]parse.ConstantSymbol{},
 	}
 
 	// Wrap with AsyncHandler to allow for calling client requests in the middle of
@@ -53,9 +55,10 @@ func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn,
 // poryscriptServer is the main handler for the Poryscript LSP server. It implements the
 // LspServer interface.
 type poryscriptServer struct {
-	connection     *jsonrpc2.Conn
-	config         config.Config
-	cachedCommands map[string][]parse.Command
+	connection      *jsonrpc2.Conn
+	config          config.Config
+	cachedCommands  map[string][]parse.Command
+	cachedConstants map[string][]parse.ConstantSymbol
 }
 
 // Runs the LSP server indefinitely.
@@ -102,24 +105,15 @@ func (s *poryscriptServer) onInitialized(ctx context.Context) error {
 // Handles an incoming LSP 'textDocument/completion' request.
 // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_completion
 func (s *poryscriptServer) onCompletion(ctx context.Context, req lsp.CompletionParams) ([]lsp.CompletionItem, error) {
-	settings, err := s.config.GetFileSettings(ctx, s.connection, string(req.TextDocument.URI))
-	if err != nil {
-		return []lsp.CompletionItem{}, nil
+	commands, _ := s.getCommands(ctx, string(req.TextDocument.URI))
+	constants, _ := s.getConstantsInFile(ctx, string(req.TextDocument.URI))
+
+	completionItems := []lsp.CompletionItem{}
+	for _, command := range commands {
+		completionItems = append(completionItems, command.ToCompletionItem())
 	}
-	// Aggregate a slice of Commands from all of the relevant files.
-	commands := []parse.Command{}
-	for _, includeFilepath := range settings.CommandIncludes {
-		fileCommands, err := s.getCommands(ctx, includeFilepath)
-		if err != nil {
-			// TODO: log error? we don't want to fail if a single file resulted in an error.
-			continue
-		}
-		commands = append(commands, fileCommands...)
-	}
-	commands = append(commands, parse.KeywordCommands...)
-	completionItems := make([]lsp.CompletionItem, len(commands))
-	for i, command := range commands {
-		completionItems[i] = command.ToCompletionItem()
+	for _, constants := range constants {
+		completionItems = append(completionItems, constants.ToCompletionItem())
 	}
 	return completionItems, nil
 }
