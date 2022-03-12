@@ -24,8 +24,11 @@ func (c ConstantSymbol) ToCompletionItem() lsp.CompletionItem {
 
 // Parses the Poryscript constants from the given file content.
 func ParseConstants(content string) []ConstantSymbol {
+	if len(content) == 0 {
+		return []ConstantSymbol{}
+	}
 	constants := []ConstantSymbol{}
-	re, _ := regexp.Compile(`const\s+(\w+)\s*=`)
+	re, _ := regexp.Compile(`\bconst\s+(\w+)\s*=`)
 	scanner := bufio.NewScanner(strings.NewReader(content))
 	lineNumber := 0
 	for scanner.Scan() {

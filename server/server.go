@@ -21,6 +21,7 @@ func New() LspServer {
 		config:          config.New(),
 		cachedCommands:  map[string][]parse.Command{},
 		cachedConstants: map[string][]parse.ConstantSymbol{},
+		cachedSymbols:   map[string][]parse.Symbol{},
 	}
 
 	// Wrap with AsyncHandler to allow for calling client requests in the middle of
@@ -59,6 +60,7 @@ type poryscriptServer struct {
 	config          config.Config
 	cachedCommands  map[string][]parse.Command
 	cachedConstants map[string][]parse.ConstantSymbol
+	cachedSymbols   map[string][]parse.Symbol
 }
 
 // Runs the LSP server indefinitely.
@@ -107,13 +109,17 @@ func (s *poryscriptServer) onInitialized(ctx context.Context) error {
 func (s *poryscriptServer) onCompletion(ctx context.Context, req lsp.CompletionParams) ([]lsp.CompletionItem, error) {
 	commands, _ := s.getCommands(ctx, string(req.TextDocument.URI))
 	constants, _ := s.getConstantsInFile(ctx, string(req.TextDocument.URI))
+	symbols, _ := s.getSymbolsInFile(ctx, string(req.TextDocument.URI))
 
 	completionItems := []lsp.CompletionItem{}
 	for _, command := range commands {
 		completionItems = append(completionItems, command.ToCompletionItem())
 	}
-	for _, constants := range constants {
-		completionItems = append(completionItems, constants.ToCompletionItem())
+	for _, constant := range constants {
+		completionItems = append(completionItems, constant.ToCompletionItem())
+	}
+	for _, symbol := range symbols {
+		completionItems = append(completionItems, symbol.ToCompletionItem())
 	}
 	return completionItems, nil
 }

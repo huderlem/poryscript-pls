@@ -32,7 +32,7 @@ func TestConstantToCompletionItem(t *testing.T) {
 	for i, tt := range tests {
 		result := tt.input.ToCompletionItem()
 		if !reflect.DeepEqual(result, tt.expected) {
-			t.Fatalf("Test Case %d:\nExpected:\n%v\n\nGot:\n%v", i, tt.expected, result)
+			t.Errorf("Test Case %d:\nExpected:\n%v\n\nGot:\n%v", i, tt.expected, result)
 		}
 	}
 }
@@ -54,8 +54,12 @@ const FOO = 54 + 3
 	}
 	for i, result := range results {
 		if !reflect.DeepEqual(result, expected[i]) {
-			t.Fatalf("Test Case %d: parsed Poryscript constants is wrong.\nExpected:\n%v\n\nGot:\n%v", i, expected[i], result)
+			t.Errorf("Test Case %d: parsed Poryscript constants is wrong.\nExpected:\n%v\n\nGot:\n%v", i, expected[i], result)
 		}
+	}
+
+	if len(ParseConstants("")) != 0 {
+		t.Errorf("ParseConstants with empty string should return an empty array")
 	}
 }
 
@@ -100,7 +104,7 @@ func TestStripComments(t *testing.T) {
 	for i, tt := range tests {
 		result := stripComment(tt.input)
 		if result != tt.expected {
-			t.Fatalf("Test Case %d: Expected: %s, Got: %s", i, tt.expected, result)
+			t.Errorf("Test Case %d: Expected: %s, Got: %s", i, tt.expected, result)
 		}
 	}
 }

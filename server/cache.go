@@ -71,3 +71,23 @@ func (s *poryscriptServer) getAndCacheConstantsInFile(ctx context.Context, file 
 	s.cachedConstants[file] = constants
 	return constants, nil
 }
+
+// Gets the list of poryscript symbols from the given file. The symbols
+// are cached for given file so that parsing is avoided in future calls.
+func (s *poryscriptServer) getSymbolsInFile(ctx context.Context, file string) ([]parse.Symbol, error) {
+	if symbols, ok := s.cachedSymbols[file]; ok {
+		return symbols, nil
+	}
+	return s.getAndCacheSymbolsInFile(ctx, file)
+}
+
+// Fetches and caches the poryscript symbols from the given file.
+func (s *poryscriptServer) getAndCacheSymbolsInFile(ctx context.Context, file string) ([]parse.Symbol, error) {
+	var content string
+	if err := s.connection.Call(ctx, "poryscript/readfs", file, &content); err != nil {
+		return []parse.Symbol{}, err
+	}
+	symbols := parse.ParseSymbols(content, file)
+	s.cachedSymbols[file] = symbols
+	return symbols, nil
+}

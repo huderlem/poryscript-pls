@@ -56,6 +56,9 @@ func (c Command) ToCompletionItem() lsp.CompletionItem {
 // ParseCommands parses the various types of commands from the given
 // file content.
 func ParseCommands(content string) []Command {
+	if len(content) == 0 {
+		return []Command{}
+	}
 	commands := parseMacroCommands(content)
 	commands = append(commands, parseAssemblyConstants(content)...)
 	commands = append(commands, parseMovementConstants(content)...)
