@@ -28,7 +28,7 @@ const (
 )
 
 // Gets the detail text for a SymbolKind.
-func (k SymbolKind) GetDetail() string {
+func (k SymbolKind) getDetail() string {
 	switch k {
 	case SymbolKindScript:
 		return "Script"
@@ -44,7 +44,7 @@ func (k SymbolKind) GetDetail() string {
 }
 
 // Gets the CompletionItemKind for a SymbolKind.
-func (k SymbolKind) GetCompletionItemKind() lsp.CompletionItemKind {
+func (k SymbolKind) getCompletionItemKind() lsp.CompletionItemKind {
 	switch k {
 	case SymbolKindScript, SymbolKindMapScripts:
 		return lsp.CIKFunction
@@ -58,8 +58,8 @@ func (k SymbolKind) GetCompletionItemKind() lsp.CompletionItemKind {
 func (s Symbol) ToCompletionItem() lsp.CompletionItem {
 	return lsp.CompletionItem{
 		Label:  s.Name,
-		Kind:   s.Kind.GetCompletionItemKind(),
-		Detail: s.Kind.GetDetail(),
+		Kind:   s.Kind.getCompletionItemKind(),
+		Detail: s.Kind.getDetail(),
 	}
 }
 

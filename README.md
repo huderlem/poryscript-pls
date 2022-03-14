@@ -18,16 +18,15 @@ Clone the Poryscript Language Extension repository.
 git clone https://github.com/SBird1337/poryscript-language
 ```
 
-In `client/src/extension.ts`, replce the `serverOptions` with a direct call to the Poryscript language server binary (`poryscript-pls`).
+In `client/src/extension.ts`, replace the `serverOptions` with a direct call to the Poryscript language server binary (`poryscript-pls`).
 ```ts
 const serverOptions: ServerOptions = async () => {
     const binPath = "path\\to\\poryscript-pls.exe";
     if (!binPath) {
         throw new Error("Couldn't fetch poryscript-pls binary");
     }
-    const childProcess = child_process.exec(binPath);
-    return childProcess;
-    };
+    return child_process.spawn(binPath);
+};
 ```
 
 This will cause the VS Code extension client to talk to the `poryscript-pls` server via `stdout` and `stdin`, rather than communicating via IPC with the Node server.

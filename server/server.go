@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/huderlem/poryscript-pls/config"
 	"github.com/huderlem/poryscript-pls/lsp"
@@ -18,10 +17,11 @@ type LspServer interface {
 
 func New() LspServer {
 	server := poryscriptServer{
-		config:          config.New(),
-		cachedCommands:  map[string][]parse.Command{},
-		cachedConstants: map[string][]parse.ConstantSymbol{},
-		cachedSymbols:   map[string][]parse.Symbol{},
+		config:           config.New(),
+		cachedCommands:   map[string][]parse.Command{},
+		cachedConstants:  map[string][]parse.ConstantSymbol{},
+		cachedSymbols:    map[string][]parse.Symbol{},
+		cachedMiscTokens: map[string][]parse.MiscToken{},
 	}
 
 	// Wrap with AsyncHandler to allow for calling client requests in the middle of
@@ -32,7 +32,6 @@ func New() LspServer {
 }
 
 func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn, request *jsonrpc2.Request) (interface{}, error) {
-	os.Stderr.WriteString(fmt.Sprintf("Handling request: %s\n", request.Method))
 	switch request.Method {
 	case "initialize":
 		params := lsp.InitializeParams{}
@@ -56,11 +55,12 @@ func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn,
 // poryscriptServer is the main handler for the Poryscript LSP server. It implements the
 // LspServer interface.
 type poryscriptServer struct {
-	connection      *jsonrpc2.Conn
-	config          config.Config
-	cachedCommands  map[string][]parse.Command
-	cachedConstants map[string][]parse.ConstantSymbol
-	cachedSymbols   map[string][]parse.Symbol
+	connection       *jsonrpc2.Conn
+	config           config.Config
+	cachedCommands   map[string][]parse.Command
+	cachedConstants  map[string][]parse.ConstantSymbol
+	cachedSymbols    map[string][]parse.Symbol
+	cachedMiscTokens map[string][]parse.MiscToken
 }
 
 // Runs the LSP server indefinitely.
@@ -110,6 +110,7 @@ func (s *poryscriptServer) onCompletion(ctx context.Context, req lsp.CompletionP
 	commands, _ := s.getCommands(ctx, string(req.TextDocument.URI))
 	constants, _ := s.getConstantsInFile(ctx, string(req.TextDocument.URI))
 	symbols, _ := s.getSymbolsInFile(ctx, string(req.TextDocument.URI))
+	miscTokens, _ := s.getMiscTokens(ctx, string(req.TextDocument.URI))
 
 	completionItems := []lsp.CompletionItem{}
 	for _, command := range commands {
@@ -120,6 +121,9 @@ func (s *poryscriptServer) onCompletion(ctx context.Context, req lsp.CompletionP
 	}
 	for _, symbol := range symbols {
 		completionItems = append(completionItems, symbol.ToCompletionItem())
+	}
+	for _, miscToken := range miscTokens {
+		completionItems = append(completionItems, miscToken.ToCompletionItem())
 	}
 	return completionItems, nil
 }
