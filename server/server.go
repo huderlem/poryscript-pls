@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/huderlem/poryscript-pls/config"
 	"github.com/huderlem/poryscript-pls/lsp"
@@ -101,6 +102,39 @@ func (s *poryscriptServer) onInitialize(ctx context.Context, params lsp.Initiali
 // Handles an incoming LSP 'initialized' notification.
 // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#initialized
 func (s *poryscriptServer) onInitialized(ctx context.Context) error {
+	if s.config.HasConfigCapability {
+		params := lsp.RegistrationParams{
+			Registrations: []lsp.Registration{
+				{
+					ID:     "workspace/didChangeConfiguration",
+					Method: "workspace/didChangeConfiguration",
+				},
+			},
+		}
+		var result interface{}
+		s.connection.Call(ctx, "client/registerCapability", params, &result)
+	}
+	if s.config.HasWorkspaceFolderCapability {
+		params := lsp.RegistrationParams{
+			Registrations: []lsp.Registration{
+				{
+					ID:     "workspace/didChangeWorkspaceFolders",
+					Method: "workspace/didChangeWorkspaceFolders",
+				},
+			},
+		}
+		var result interface{}
+		s.connection.Call(ctx, "client/registerCapability", params, &result)
+	}
+	var filepaths []string
+	if err := s.connection.Call(ctx, "poryscript/getPoryscriptFiles", nil, &filepaths); err != nil {
+		os.Stderr.WriteString(err.Error())
+	}
+	for _, filepath := range filepaths {
+		if _, err := s.getAndCacheSymbolsInFile(ctx, "file://"+filepath); err != nil {
+			os.Stderr.WriteString(err.Error())
+		}
+	}
 	return nil
 }
 
@@ -109,8 +143,13 @@ func (s *poryscriptServer) onInitialized(ctx context.Context) error {
 func (s *poryscriptServer) onCompletion(ctx context.Context, req lsp.CompletionParams) ([]lsp.CompletionItem, error) {
 	commands, _ := s.getCommands(ctx, string(req.TextDocument.URI))
 	constants, _ := s.getConstantsInFile(ctx, string(req.TextDocument.URI))
-	symbols, _ := s.getSymbolsInFile(ctx, string(req.TextDocument.URI))
 	miscTokens, _ := s.getMiscTokens(ctx, string(req.TextDocument.URI))
+
+	s.getSymbolsInFile(ctx, string(req.TextDocument.URI))
+	symbols := []parse.Symbol{}
+	for _, v := range s.cachedSymbols {
+		symbols = append(symbols, v...)
+	}
 
 	completionItems := []lsp.CompletionItem{}
 	for _, command := range commands {

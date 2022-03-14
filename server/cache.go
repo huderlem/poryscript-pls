@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/huderlem/poryscript-pls/parse"
 )
@@ -32,6 +33,7 @@ func (s *poryscriptServer) getCommands(ctx context.Context, file string) ([]pars
 // are cached for the given file so that parsing is avoided in future
 // calls.
 func (s *poryscriptServer) getCommandsInFile(ctx context.Context, file string) ([]parse.Command, error) {
+	file, _ = url.QueryUnescape(file)
 	if commands, ok := s.cachedCommands[file]; ok {
 		return commands, nil
 	}
@@ -40,6 +42,7 @@ func (s *poryscriptServer) getCommandsInFile(ctx context.Context, file string) (
 
 // Fetches and caches the Commands from the given file.
 func (s *poryscriptServer) getAndCacheCommandsInFile(ctx context.Context, file string) ([]parse.Command, error) {
+	file, _ = url.QueryUnescape(file)
 	var content string
 	if err := s.connection.Call(ctx, "poryscript/readfile", file, &content); err != nil {
 		return []parse.Command{}, err
@@ -55,6 +58,7 @@ func (s *poryscriptServer) getAndCacheCommandsInFile(ctx context.Context, file s
 // Gets the list of poryscript constants from the given file. The constants
 // are cached for the given file so that parsing is avoided in future calls.
 func (s *poryscriptServer) getConstantsInFile(ctx context.Context, file string) ([]parse.ConstantSymbol, error) {
+	file, _ = url.QueryUnescape(file)
 	if constants, ok := s.cachedConstants[file]; ok {
 		return constants, nil
 	}
@@ -63,6 +67,7 @@ func (s *poryscriptServer) getConstantsInFile(ctx context.Context, file string) 
 
 // Fetches and caches the poryscript constants from the given file.
 func (s *poryscriptServer) getAndCacheConstantsInFile(ctx context.Context, file string) ([]parse.ConstantSymbol, error) {
+	file, _ = url.QueryUnescape(file)
 	var content string
 	if err := s.connection.Call(ctx, "poryscript/readfs", file, &content); err != nil {
 		return []parse.ConstantSymbol{}, err
@@ -75,6 +80,7 @@ func (s *poryscriptServer) getAndCacheConstantsInFile(ctx context.Context, file 
 // Gets the list of poryscript symbols from the given file. The symbols
 // are cached for the given file so that parsing is avoided in future calls.
 func (s *poryscriptServer) getSymbolsInFile(ctx context.Context, file string) ([]parse.Symbol, error) {
+	file, _ = url.QueryUnescape(file)
 	if symbols, ok := s.cachedSymbols[file]; ok {
 		return symbols, nil
 	}
@@ -83,6 +89,7 @@ func (s *poryscriptServer) getSymbolsInFile(ctx context.Context, file string) ([
 
 // Fetches and caches the poryscript symbols from the given file.
 func (s *poryscriptServer) getAndCacheSymbolsInFile(ctx context.Context, file string) ([]parse.Symbol, error) {
+	file, _ = url.QueryUnescape(file)
 	var content string
 	if err := s.connection.Call(ctx, "poryscript/readfs", file, &content); err != nil {
 		return []parse.Symbol{}, err
@@ -95,6 +102,7 @@ func (s *poryscriptServer) getAndCacheSymbolsInFile(ctx context.Context, file st
 // Gets the aggregate list of miscellaneous tokens from the collection of files
 // specified in the settings.
 func (s *poryscriptServer) getMiscTokens(ctx context.Context, file string) ([]parse.MiscToken, error) {
+	file, _ = url.QueryUnescape(file)
 	settings, err := s.config.GetFileSettings(ctx, s.connection, file)
 	if err != nil {
 		return []parse.MiscToken{}, err
@@ -114,6 +122,7 @@ func (s *poryscriptServer) getMiscTokens(ctx context.Context, file string) ([]pa
 // Gets the list of miscellaneous tokens from the given file. The tokens
 // are cached for the given file so that parsing is avoided in future calls.
 func (s *poryscriptServer) getMiscTokensInFile(ctx context.Context, expression, tokenType, file string) ([]parse.MiscToken, error) {
+	file, _ = url.QueryUnescape(file)
 	if tokens, ok := s.cachedMiscTokens[file+expression]; ok {
 		return tokens, nil
 	}
@@ -122,6 +131,7 @@ func (s *poryscriptServer) getMiscTokensInFile(ctx context.Context, expression, 
 
 // Fetches and caches the miscellaneous tokens from the given file.
 func (s *poryscriptServer) getAndCacheMiscTokensInFile(ctx context.Context, expression, tokenType, file string) ([]parse.MiscToken, error) {
+	file, _ = url.QueryUnescape(file)
 	var content string
 	if err := s.connection.Call(ctx, "poryscript/readfile", file, &content); err != nil {
 		return []parse.MiscToken{}, err

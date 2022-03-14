@@ -36,6 +36,16 @@ func (p *InitializeParams) Root() DocumentURI {
 	return DocumentURI("file://" + p.RootPath)
 }
 
+type Registration struct {
+	ID              string      `json:"id"`
+	Method          string      `json:"method"`
+	RegisterOptions interface{} `json:"registerOptions,omitempty"`
+}
+
+type RegistrationParams struct {
+	Registrations []Registration `json:"registrations"`
+}
+
 type DocumentURI string
 
 type ClientInfo struct {
