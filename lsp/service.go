@@ -641,6 +641,12 @@ func RawMarkedString(s string) MarkedString {
 	return MarkedString{Value: s, isRawString: true}
 }
 
+type SignatureHelpParams struct {
+	TextDocumentPositionParams
+	WorkDoneProgressParams
+	Context CompletionContext `json:"context,omitempty"`
+}
+
 type SignatureHelp struct {
 	Signatures      []SignatureInformation `json:"signatures"`
 	ActiveSignature int                    `json:"activeSignature"`
@@ -654,8 +660,8 @@ type SignatureInformation struct {
 }
 
 type ParameterInformation struct {
-	Label         string `json:"label"`
-	Documentation string `json:"documentation,omitempty"`
+	Label         string        `json:"label"`
+	Documentation MarkupContent `json:"documentation,omitempty"`
 }
 
 type ReferenceContext struct {

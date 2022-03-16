@@ -1,6 +1,7 @@
 package parse
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -51,6 +52,69 @@ func (c Command) ToCompletionItem() lsp.CompletionItem {
 		result.InsertTextFormat = lsp.ITFSnippet
 	}
 	return result
+}
+
+// Gets the parameters label for signature help.
+func (c Command) GetParamsLabel() string {
+	var sb strings.Builder
+	sb.WriteString(c.Name)
+	sb.WriteRune('(')
+	labels := []string{}
+	for _, p := range c.Parameters {
+		labels = append(labels, p.getLabelName())
+	}
+	sb.WriteString(strings.Join(labels, ", "))
+	sb.WriteRune(')')
+	return sb.String()
+}
+
+func (c Command) GetParamInformation() []lsp.ParameterInformation {
+	result := []lsp.ParameterInformation{}
+	for _, p := range c.Parameters {
+		result = append(result, lsp.ParameterInformation{
+			Label:         p.Name,
+			Documentation: p.getParamKindLabel(),
+		})
+	}
+	return result
+}
+
+func (c CommandParam) getLabelName() string {
+	switch c.Kind {
+	case CommandParamDefault:
+		return fmt.Sprintf("[%s=%s]", c.Name, c.Default)
+	case CommandParamOptional:
+		return fmt.Sprintf("[%s]", c.Name)
+	case CommandParamRequired:
+		return c.Name
+	default:
+		return ""
+	}
+}
+
+func (c CommandParam) getParamKindLabel() lsp.MarkupContent {
+	switch c.Kind {
+	case CommandParamDefault:
+		return lsp.MarkupContent{
+			Value: fmt.Sprintf("%s=%s", c.Name, c.Default),
+			Kind:  lsp.MarkupKindMarkdown,
+		}
+	case CommandParamOptional:
+		return lsp.MarkupContent{
+			Value: fmt.Sprintf("%s *Optional*", c.Name),
+			Kind:  lsp.MarkupKindMarkdown,
+		}
+	case CommandParamRequired:
+		return lsp.MarkupContent{
+			Value: fmt.Sprintf("%s *Required*", c.Name),
+			Kind:  lsp.MarkupKindMarkdown,
+		}
+	default:
+		return lsp.MarkupContent{
+			Value: "",
+			Kind:  lsp.MarkupKindPlaintext,
+		}
+	}
 }
 
 // ParseCommands parses the various types of commands from the given

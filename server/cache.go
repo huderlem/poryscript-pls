@@ -68,8 +68,8 @@ func (s *poryscriptServer) getConstantsInFile(ctx context.Context, file string) 
 // Fetches and caches the poryscript constants from the given file.
 func (s *poryscriptServer) getAndCacheConstantsInFile(ctx context.Context, file string) ([]parse.ConstantSymbol, error) {
 	file, _ = url.QueryUnescape(file)
-	var content string
-	if err := s.connection.Call(ctx, "poryscript/readfs", file, &content); err != nil {
+	content, err := s.getDocumentContent(ctx, file)
+	if err != nil {
 		return []parse.ConstantSymbol{}, err
 	}
 	constants := parse.ParseConstants(content, file)
@@ -90,8 +90,8 @@ func (s *poryscriptServer) getSymbolsInFile(ctx context.Context, file string) ([
 // Fetches and caches the poryscript symbols from the given file.
 func (s *poryscriptServer) getAndCacheSymbolsInFile(ctx context.Context, file string) ([]parse.Symbol, error) {
 	file, _ = url.QueryUnescape(file)
-	var content string
-	if err := s.connection.Call(ctx, "poryscript/readfs", file, &content); err != nil {
+	content, err := s.getDocumentContent(ctx, file)
+	if err != nil {
 		return []parse.Symbol{}, err
 	}
 	symbols := parse.ParseSymbols(content, file)
@@ -143,4 +143,25 @@ func (s *poryscriptServer) getAndCacheMiscTokensInFile(ctx context.Context, expr
 	tokens := parse.ParseMiscTokens(content, expression, tokenType, fileUri)
 	s.cachedMiscTokens[file+expression] = tokens
 	return tokens, nil
+}
+
+// Gets the content for the given file. The content is cached
+// for the given file so that parsing is avoided in future calls.//
+func (s *poryscriptServer) getDocumentContent(ctx context.Context, file string) (string, error) {
+	file, _ = url.QueryUnescape(file)
+	if content, ok := s.cachedDocuments[file]; ok {
+		return content, nil
+	}
+	return s.getAndCacheDocumentContent(ctx, file)
+}
+
+// Fetches and caches the content for the given file.
+func (s *poryscriptServer) getAndCacheDocumentContent(ctx context.Context, file string) (string, error) {
+	file, _ = url.QueryUnescape(file)
+	var content string
+	if err := s.connection.Call(ctx, "poryscript/readfs", file, &content); err != nil {
+		return "", err
+	}
+	s.cachedDocuments[file] = content
+	return content, nil
 }

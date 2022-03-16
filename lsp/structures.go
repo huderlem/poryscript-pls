@@ -198,3 +198,15 @@ type DocumentFilter struct {
 	 */
 	Pattern string `json:"pattern,omitempty"`
 }
+
+type MarkupKind string
+
+const (
+	MarkupKindPlaintext = "plaintext"
+	MarkupKindMarkdown  = "markdown"
+)
+
+type MarkupContent struct {
+	Kind  MarkupKind `json:"kind"`
+	Value string     `json:"value"`
+}

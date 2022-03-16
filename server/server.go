@@ -20,6 +20,7 @@ type LspServer interface {
 func New() LspServer {
 	server := poryscriptServer{
 		config:           config.New(),
+		cachedDocuments:  map[string]string{},
 		cachedCommands:   map[string][]parse.Command{},
 		cachedConstants:  map[string][]parse.ConstantSymbol{},
 		cachedSymbols:    map[string][]parse.Symbol{},
@@ -55,6 +56,18 @@ func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn,
 			return nil, err
 		}
 		return server.onDefinition(ctx, params)
+	case "textDocument/signatureHelp":
+		params := lsp.SignatureHelpParams{}
+		if err := json.Unmarshal(*request.Params, &params); err != nil {
+			return nil, err
+		}
+		return server.onSignatureHelp(ctx, params)
+	case "textDocument/didChange":
+		params := lsp.DidChangeTextDocumentParams{}
+		if err := json.Unmarshal(*request.Params, &params); err != nil {
+			return nil, err
+		}
+		return nil, server.onTextDocumentDidChange(ctx, params)
 	default:
 		return nil, fmt.Errorf("unsupported request method '%s'", request.Method)
 	}
@@ -65,6 +78,7 @@ func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn,
 type poryscriptServer struct {
 	connection       *jsonrpc2.Conn
 	config           config.Config
+	cachedDocuments  map[string]string
 	cachedCommands   map[string][]parse.Command
 	cachedConstants  map[string][]parse.ConstantSymbol
 	cachedSymbols    map[string][]parse.Symbol
@@ -87,7 +101,7 @@ func (s *poryscriptServer) onInitialize(ctx context.Context, params lsp.Initiali
 			TextDocumentSync: &lsp.TextDocumentSyncOptionsOrKind{
 				Options: &lsp.TextDocumentSyncOptions{
 					OpenClose: true,
-					Change:    lsp.TDSKIncremental,
+					Change:    lsp.TDSKFull,
 				},
 			},
 			CompletionProvider: &lsp.CompletionOptions{},
@@ -211,4 +225,63 @@ func (s *poryscriptServer) onDefinition(ctx context.Context, req lsp.DefinitionP
 	}
 
 	return []lsp.Location{}, nil
+}
+
+// Handles an incoming LSP 'textDocument/signatureHelp' request.
+// https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_signatureHelp
+func (s *poryscriptServer) onSignatureHelp(ctx context.Context, req lsp.SignatureHelpParams) (lsp.SignatureHelp, error) {
+	content, err := s.getDocumentContent(ctx, string(req.TextDocument.URI))
+	if err != nil {
+		return lsp.SignatureHelp{}, err
+	}
+
+	callInfo, err := parse.GetCommandCallParts(content, req.Position.Line, req.Position.Character)
+	if err != nil {
+		// TODO: log error?
+		return lsp.SignatureHelp{}, nil
+	}
+
+	// TODO: this probably should be converted to a map for fast lookup.
+	var command *parse.Command
+	commands, _ := s.getCommands(ctx, string(req.TextDocument.URI))
+	for _, c := range commands {
+		if c.Name == callInfo.Command {
+			command = &c
+			break
+		}
+	}
+	if command == nil || len(command.Parameters) == 0 {
+		return lsp.SignatureHelp{}, nil
+	}
+	if req.Position.Character < callInfo.OpenParen.Character+1 || req.Position.Character > callInfo.CloseParen.Character {
+		return lsp.SignatureHelp{}, nil
+	}
+
+	paramId := 0
+	for paramId < len(callInfo.Commas) && req.Position.Character > callInfo.Commas[paramId].Character {
+		paramId++
+	}
+
+	return lsp.SignatureHelp{
+		ActiveParameter: paramId,
+		ActiveSignature: 0,
+		Signatures: []lsp.SignatureInformation{
+			{
+				Label:         command.GetParamsLabel(),
+				Documentation: command.Documentation,
+				Parameters:    command.GetParamInformation(),
+			},
+		},
+	}, nil
+}
+
+// Handles an incoming LSP 'textDocument/didChange' request.
+// https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_didChange
+func (s *poryscriptServer) onTextDocumentDidChange(ctx context.Context, req lsp.DidChangeTextDocumentParams) error {
+	if len(req.ContentChanges) == 0 {
+		return nil
+	}
+	file, _ := url.QueryUnescape(string(req.TextDocument.URI))
+	s.cachedDocuments[file] = req.ContentChanges[0].Text
+	return nil
 }
