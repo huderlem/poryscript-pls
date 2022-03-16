@@ -55,11 +55,26 @@ func (k SymbolKind) getCompletionItemKind() lsp.CompletionItemKind {
 	}
 }
 
+// Returns the lsp.CompletionItem representation of a Symbol.
 func (s Symbol) ToCompletionItem() lsp.CompletionItem {
 	return lsp.CompletionItem{
 		Label:  s.Name,
 		Kind:   s.Kind.getCompletionItemKind(),
 		Detail: s.Kind.getDetail(),
+	}
+}
+
+// Returns the lsp.Location representation of a Symbol.
+func (s Symbol) ToLocation() lsp.Location {
+	return lsp.Location{
+		URI: lsp.DocumentURI(s.Uri),
+		Range: lsp.Range{
+			Start: s.Position,
+			End: lsp.Position{
+				Line:      s.Position.Line,
+				Character: s.Position.Character + len(s.Name),
+			},
+		},
 	}
 }
 

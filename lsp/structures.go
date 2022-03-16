@@ -164,6 +164,10 @@ type TextDocumentPositionParams struct {
 	Position Position `json:"position"`
 }
 
+type WorkDoneProgressParams struct {
+	WorkDoneToken string `json:"workDoneToken,omitempty"`
+}
+
 type DocumentSelector []DocumentFilter
 
 type DocumentFilter struct {

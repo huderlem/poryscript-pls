@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/huderlem/poryscript-pls/config"
@@ -48,6 +49,12 @@ func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn,
 			return nil, err
 		}
 		return server.onCompletion(ctx, params)
+	case "textDocument/definition":
+		params := lsp.DefinitionParams{}
+		if err := json.Unmarshal(*request.Params, &params); err != nil {
+			return nil, err
+		}
+		return server.onDefinition(ctx, params)
 	default:
 		return nil, fmt.Errorf("unsupported request method '%s'", request.Method)
 	}
@@ -165,4 +172,43 @@ func (s *poryscriptServer) onCompletion(ctx context.Context, req lsp.CompletionP
 		completionItems = append(completionItems, miscToken.ToCompletionItem())
 	}
 	return completionItems, nil
+}
+
+// Handles an incoming LSP 'textDocument/definition' request.
+// https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_definition
+func (s *poryscriptServer) onDefinition(ctx context.Context, req lsp.DefinitionParams) ([]lsp.Location, error) {
+	file, _ := url.QueryUnescape(string(req.TextDocument.URI))
+	var content string
+	if err := s.connection.Call(ctx, "poryscript/readfs", file, &content); err != nil {
+		return []lsp.Location{}, err
+	}
+	token := parse.GetTokenAt(content, req.Position.Line, req.Position.Character)
+
+	constants, _ := s.getConstantsInFile(ctx, string(req.TextDocument.URI))
+	for _, c := range constants {
+		if c.Name == token {
+			return []lsp.Location{c.ToLocation()}, nil
+		}
+	}
+
+	s.getSymbolsInFile(ctx, string(req.TextDocument.URI))
+	symbols := []parse.Symbol{}
+	for _, v := range s.cachedSymbols {
+		symbols = append(symbols, v...)
+	}
+	for _, s := range symbols {
+		if s.Name == token {
+			return []lsp.Location{s.ToLocation()}, nil
+		}
+	}
+
+	miscTokens, _ := s.getMiscTokens(ctx, string(req.TextDocument.URI))
+	for _, t := range miscTokens {
+		if t.Name == token {
+			l := t.ToLocation()
+			return []lsp.Location{l}, nil
+		}
+	}
+
+	return []lsp.Location{}, nil
 }

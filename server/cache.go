@@ -72,7 +72,7 @@ func (s *poryscriptServer) getAndCacheConstantsInFile(ctx context.Context, file 
 	if err := s.connection.Call(ctx, "poryscript/readfs", file, &content); err != nil {
 		return []parse.ConstantSymbol{}, err
 	}
-	constants := parse.ParseConstants(content)
+	constants := parse.ParseConstants(content, file)
 	s.cachedConstants[file] = constants
 	return constants, nil
 }

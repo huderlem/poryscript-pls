@@ -6,6 +6,8 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"strings"
+
+	"github.com/huderlem/poryscript-pls/lsp/lspext"
 )
 
 type None struct{}
@@ -44,6 +46,12 @@ type Registration struct {
 
 type RegistrationParams struct {
 	Registrations []Registration `json:"registrations"`
+}
+
+type DefinitionParams struct {
+	TextDocumentPositionParams
+	WorkDoneProgressParams
+	lspext.PartialResultParams
 }
 
 type DocumentURI string

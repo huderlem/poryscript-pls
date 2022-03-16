@@ -50,6 +50,20 @@ func (t MiscToken) ToCompletionItem() lsp.CompletionItem {
 	}
 }
 
+// Returns the lsp.Location representation of a MiscToken.
+func (t MiscToken) ToLocation() lsp.Location {
+	return lsp.Location{
+		URI: lsp.DocumentURI(t.Uri),
+		Range: lsp.Range{
+			Start: t.Position,
+			End: lsp.Position{
+				Line:      t.Position.Line,
+				Character: t.Position.Character + len(t.Name),
+			},
+		},
+	}
+}
+
 // Parses the miscellaneous tokens from the given file content and regex.
 func ParseMiscTokens(content string, expression string, tokenType string, fileUri string) []MiscToken {
 	if len(content) == 0 {

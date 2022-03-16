@@ -12,6 +12,7 @@ import (
 type ConstantSymbol struct {
 	Name     string
 	Position lsp.Position
+	Uri      string
 }
 
 // Returns the lsp.CompletionItem representation of a ConstantSymbol.
@@ -22,8 +23,22 @@ func (c ConstantSymbol) ToCompletionItem() lsp.CompletionItem {
 	}
 }
 
+// Returns the lsp.Location representation of a ConstantSymbol.
+func (c ConstantSymbol) ToLocation() lsp.Location {
+	return lsp.Location{
+		URI: lsp.DocumentURI(c.Uri),
+		Range: lsp.Range{
+			Start: c.Position,
+			End: lsp.Position{
+				Line:      c.Position.Line,
+				Character: c.Position.Character + len(c.Name),
+			},
+		},
+	}
+}
+
 // Parses the Poryscript constants from the given file content.
-func ParseConstants(content string) []ConstantSymbol {
+func ParseConstants(content string, uri string) []ConstantSymbol {
 	if len(content) == 0 {
 		return []ConstantSymbol{}
 	}
@@ -41,6 +56,7 @@ func ParseConstants(content string) []ConstantSymbol {
 					Line:      lineNumber,
 					Character: match[2],
 				},
+				Uri: uri,
 			}
 			constants = append(constants, command)
 		}

@@ -41,6 +41,32 @@ func TestMiscTokenToCompletionItem(t *testing.T) {
 	}
 }
 
+func TestMiscTokenToLocation(t *testing.T) {
+	tests := []struct {
+		input    MiscToken
+		expected lsp.Location
+	}{
+		{
+			input:    MiscToken{},
+			expected: lsp.Location{},
+		},
+		{
+			input:    MiscToken{Uri: "testfile.pory"},
+			expected: lsp.Location{URI: "testfile.pory"},
+		},
+		{
+			input:    MiscToken{Name: "foo", Position: lsp.Position{Line: 2, Character: 7}, Uri: "testfile.pory"},
+			expected: lsp.Location{Range: lsp.Range{Start: lsp.Position{Line: 2, Character: 7}, End: lsp.Position{Line: 2, Character: 10}}, URI: "testfile.pory"},
+		},
+	}
+	for i, tt := range tests {
+		result := tt.input.ToLocation()
+		if !reflect.DeepEqual(result, tt.expected) {
+			t.Errorf("Test Case %d:\nExpected:\n%v\n\nGot:\n%v", i, tt.expected, result)
+		}
+	}
+}
+
 func TestParseMiscTokens(t *testing.T) {
 	tests := []struct {
 		input      string

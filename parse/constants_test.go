@@ -37,6 +37,32 @@ func TestConstantToCompletionItem(t *testing.T) {
 	}
 }
 
+func TestConstantToLocation(t *testing.T) {
+	tests := []struct {
+		input    ConstantSymbol
+		expected lsp.Location
+	}{
+		{
+			input:    ConstantSymbol{},
+			expected: lsp.Location{},
+		},
+		{
+			input:    ConstantSymbol{Uri: "testfile.pory"},
+			expected: lsp.Location{URI: "testfile.pory"},
+		},
+		{
+			input:    ConstantSymbol{Name: "foo", Position: lsp.Position{Line: 2, Character: 7}, Uri: "testfile.pory"},
+			expected: lsp.Location{Range: lsp.Range{Start: lsp.Position{Line: 2, Character: 7}, End: lsp.Position{Line: 2, Character: 10}}, URI: "testfile.pory"},
+		},
+	}
+	for i, tt := range tests {
+		result := tt.input.ToLocation()
+		if !reflect.DeepEqual(result, tt.expected) {
+			t.Errorf("Test Case %d:\nExpected:\n%v\n\nGot:\n%v", i, tt.expected, result)
+		}
+	}
+}
+
 func TestParseConstants(t *testing.T) {
 	input := `
 const FOO = 54 + 3
@@ -44,11 +70,11 @@ const FOO = 54 + 3
   	const BAR = 22 const BAZ = FOO
 	# const IGNORE_ME = foo`
 	expected := []ConstantSymbol{
-		{Name: "FOO", Position: lsp.Position{Line: 1, Character: 6}},
-		{Name: "BAR", Position: lsp.Position{Line: 3, Character: 9}},
-		{Name: "BAZ", Position: lsp.Position{Line: 3, Character: 24}},
+		{Name: "FOO", Position: lsp.Position{Line: 1, Character: 6}, Uri: "testfile.pory"},
+		{Name: "BAR", Position: lsp.Position{Line: 3, Character: 9}, Uri: "testfile.pory"},
+		{Name: "BAZ", Position: lsp.Position{Line: 3, Character: 24}, Uri: "testfile.pory"},
 	}
-	results := ParseConstants(input)
+	results := ParseConstants(input, "testfile.pory")
 	if len(expected) != len(results) {
 		t.Fatalf("Wrong number of parsed Poryscript constants. Expected=%d, Got=%d", len(expected), len(results))
 	}
@@ -58,7 +84,7 @@ const FOO = 54 + 3
 		}
 	}
 
-	if len(ParseConstants("")) != 0 {
+	if len(ParseConstants("", "testfile.pory")) != 0 {
 		t.Errorf("ParseConstants with empty string should return an empty array")
 	}
 }

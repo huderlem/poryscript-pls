@@ -29,6 +29,13 @@ const serverOptions: ServerOptions = async () => {
 };
 ```
 
+Also in `client/src/extension.ts`, replace the `poryscript/getfileuri` handler with the following:
+```ts
+client.onRequest("poryscript/getfileuri", file => {
+    return pathToFileURL(path.join(workspace.workspaceFolders[0].uri.fsPath, file)).toString();
+});
+```
+
 This will cause the VS Code extension client to talk to the `poryscript-pls` server via `stdout` and `stdin`, rather than communicating via IPC with the Node server.
 
 Launch the extension as usual to test the `poryscript-pls` server.
