@@ -10,6 +10,8 @@ import (
 	"github.com/huderlem/poryscript-pls/config"
 	"github.com/huderlem/poryscript-pls/lsp"
 	"github.com/huderlem/poryscript-pls/parse"
+	"github.com/huderlem/poryscript/lexer"
+	"github.com/huderlem/poryscript/token"
 	"github.com/sourcegraph/jsonrpc2"
 )
 
@@ -21,10 +23,10 @@ func New() LspServer {
 	server := poryscriptServer{
 		config:           config.New(),
 		cachedDocuments:  map[string]string{},
-		cachedCommands:   map[string][]parse.Command{},
-		cachedConstants:  map[string][]parse.ConstantSymbol{},
-		cachedSymbols:    map[string][]parse.Symbol{},
-		cachedMiscTokens: map[string][]parse.MiscToken{},
+		cachedCommands:   map[string]map[string]parse.Command{},
+		cachedConstants:  map[string]map[string]parse.ConstantSymbol{},
+		cachedSymbols:    map[string]map[string]parse.Symbol{},
+		cachedMiscTokens: map[string]map[string]parse.MiscToken{},
 	}
 
 	// Wrap with AsyncHandler to allow for calling client requests in the middle of
@@ -62,12 +64,13 @@ func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn,
 			return nil, err
 		}
 		return server.onSignatureHelp(ctx, params)
-	case "textDocument/didChange":
-		params := lsp.DidChangeTextDocumentParams{}
+	case "textDocument/semanticTokens/full":
+		params := lsp.SemanticTokensParams{}
 		if err := json.Unmarshal(*request.Params, &params); err != nil {
 			return nil, err
 		}
-		return nil, server.onTextDocumentDidChange(ctx, params)
+		return server.onSemanticTokensFull(ctx, params)
+
 	default:
 		return nil, fmt.Errorf("unsupported request method '%s'", request.Method)
 	}
@@ -79,10 +82,10 @@ type poryscriptServer struct {
 	connection       *jsonrpc2.Conn
 	config           config.Config
 	cachedDocuments  map[string]string
-	cachedCommands   map[string][]parse.Command
-	cachedConstants  map[string][]parse.ConstantSymbol
-	cachedSymbols    map[string][]parse.Symbol
-	cachedMiscTokens map[string][]parse.MiscToken
+	cachedCommands   map[string]map[string]parse.Command
+	cachedConstants  map[string]map[string]parse.ConstantSymbol
+	cachedSymbols    map[string]map[string]parse.Symbol
+	cachedMiscTokens map[string]map[string]parse.MiscToken
 }
 
 // Runs the LSP server indefinitely.
@@ -110,7 +113,7 @@ func (s *poryscriptServer) onInitialize(ctx context.Context, params lsp.Initiali
 			},
 			SemanticTokensProvider: &lsp.SemanticTokensOptions{
 				Full:  lsp.STPFFull,
-				Range: true,
+				Range: false,
 				Legend: lsp.SemanticTokensLegend{
 					TokenTypes: []string{"keyword", "function", "enumMember", "variable"},
 				},
@@ -168,8 +171,10 @@ func (s *poryscriptServer) onCompletion(ctx context.Context, req lsp.CompletionP
 
 	s.getSymbolsInFile(ctx, string(req.TextDocument.URI))
 	symbols := []parse.Symbol{}
-	for _, v := range s.cachedSymbols {
-		symbols = append(symbols, v...)
+	for _, fileSymbols := range s.cachedSymbols {
+		for _, s := range fileSymbols {
+			symbols = append(symbols, s)
+		}
 	}
 
 	completionItems := []lsp.CompletionItem{}
@@ -199,29 +204,24 @@ func (s *poryscriptServer) onDefinition(ctx context.Context, req lsp.DefinitionP
 	token := parse.GetTokenAt(content, req.Position.Line, req.Position.Character)
 
 	constants, _ := s.getConstantsInFile(ctx, string(req.TextDocument.URI))
-	for _, c := range constants {
-		if c.Name == token {
-			return []lsp.Location{c.ToLocation()}, nil
-		}
+	if c, ok := constants[token]; ok {
+		return []lsp.Location{c.ToLocation()}, nil
 	}
 
 	s.getSymbolsInFile(ctx, string(req.TextDocument.URI))
-	symbols := []parse.Symbol{}
-	for _, v := range s.cachedSymbols {
-		symbols = append(symbols, v...)
-	}
-	for _, s := range symbols {
-		if s.Name == token {
-			return []lsp.Location{s.ToLocation()}, nil
+	symbols := map[string]parse.Symbol{}
+	for _, fileSymbols := range s.cachedSymbols {
+		for _, s := range fileSymbols {
+			symbols[s.Name] = s
 		}
+	}
+	if s, ok := symbols[token]; ok {
+		return []lsp.Location{s.ToLocation()}, nil
 	}
 
 	miscTokens, _ := s.getMiscTokens(ctx, string(req.TextDocument.URI))
-	for _, t := range miscTokens {
-		if t.Name == token {
-			l := t.ToLocation()
-			return []lsp.Location{l}, nil
-		}
+	if t, ok := miscTokens[token]; ok {
+		return []lsp.Location{t.ToLocation()}, nil
 	}
 
 	return []lsp.Location{}, nil
@@ -241,16 +241,10 @@ func (s *poryscriptServer) onSignatureHelp(ctx context.Context, req lsp.Signatur
 		return lsp.SignatureHelp{}, nil
 	}
 
-	// TODO: this probably should be converted to a map for fast lookup.
-	var command *parse.Command
 	commands, _ := s.getCommands(ctx, string(req.TextDocument.URI))
-	for _, c := range commands {
-		if c.Name == callInfo.Command {
-			command = &c
-			break
-		}
-	}
-	if command == nil || len(command.Parameters) == 0 {
+	command, ok := commands[callInfo.Command]
+
+	if !ok || len(command.Parameters) == 0 {
 		return lsp.SignatureHelp{}, nil
 	}
 	if req.Position.Character < callInfo.OpenParen.Character+1 || req.Position.Character > callInfo.CloseParen.Character {
@@ -284,4 +278,79 @@ func (s *poryscriptServer) onTextDocumentDidChange(ctx context.Context, req lsp.
 	file, _ := url.QueryUnescape(string(req.TextDocument.URI))
 	s.cachedDocuments[file] = req.ContentChanges[0].Text
 	return nil
+}
+
+// Handles an incoming LSP 'textDocument/semanticTokens/full' request.
+// https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_semanticTokens
+func (s *poryscriptServer) onSemanticTokensFull(ctx context.Context, req lsp.SemanticTokensParams) (lsp.SemanticTokens, error) {
+	content, err := s.getDocumentContent(ctx, string(req.TextDocument.URI))
+	if err != nil {
+		return lsp.SemanticTokens{}, err
+	}
+
+	// Collect the tokens.
+	l := lexer.New(content)
+	tokens := []token.Token{}
+	for {
+		t := l.NextToken()
+		if t.Type == token.EOF {
+			break
+		}
+		tokens = append(tokens, t)
+	}
+
+	commands, _ := s.getCommands(ctx, string(req.TextDocument.URI))
+	constants, _ := s.getConstantsInFile(ctx, string(req.TextDocument.URI))
+	miscTokens, _ := s.getMiscTokens(ctx, string(req.TextDocument.URI))
+	s.getSymbolsInFile(ctx, string(req.TextDocument.URI))
+	symbols := map[string]parse.Symbol{}
+	for _, fileSymbols := range s.cachedSymbols {
+		for _, s := range fileSymbols {
+			symbols[s.Name] = s
+		}
+	}
+
+	// TODO: use strongly-typed token types for AddToken(), rather than hardcoded integers
+	builder := lsp.SemanticTokenBuilder{}
+	for _, t := range tokens {
+		if command, ok := commands[t.Literal]; ok {
+			// 'switch' and 'case' are both Poryscript keywords and scripting commands.
+			if t.Literal != "switch" && t.Literal != "case" {
+				switch command.Kind {
+				case lsp.CIKFunction:
+					builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 1, 0)
+				case lsp.CIKConstant:
+					builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 0, 0)
+				}
+			}
+		}
+
+		if constant, ok := constants[t.Literal]; ok {
+			if t.LineNumber-1 != constant.Position.Line {
+				builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 2, 0)
+			}
+		}
+
+		if symbol, ok := symbols[t.Literal]; ok {
+			switch symbol.Kind {
+			case parse.SymbolKindScript, parse.SymbolKindMapScripts:
+				builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 1, 0)
+			case parse.SymbolKindMovementScript, parse.SymbolKindText:
+				builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 3, 0)
+			}
+		}
+
+		if miscToken, ok := miscTokens[t.Literal]; ok {
+			switch miscToken.Type {
+			case "special":
+				builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 1, 0)
+			case "define":
+				builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 2, 0)
+			default:
+				builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 0, 0)
+			}
+		}
+	}
+
+	return lsp.SemanticTokens{Data: builder.Build()}, nil
 }

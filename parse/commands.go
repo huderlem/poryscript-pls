@@ -322,7 +322,7 @@ var KeywordCommands = []Command{
 	{
 		Name:       "format",
 		Detail:     "Format String",
-		Kind:       lsp.CIKText,
+		Kind:       lsp.CIKFunction,
 		InsertText: "format(\"$0\")",
 	},
 	{
