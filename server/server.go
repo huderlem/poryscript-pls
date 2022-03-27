@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"sync"
 
 	"github.com/huderlem/poryscript-pls/config"
 	"github.com/huderlem/poryscript-pls/lsp"
@@ -33,7 +34,7 @@ func New() LspServer {
 	// handling a request. Otherwise, a channel deadlock will occur and cause a panic.
 	handler := jsonrpc2.AsyncHandler(jsonrpc2.HandlerWithError(server.handle))
 	server.connection = jsonrpc2.NewConn(context.Background(), jsonrpc2.NewBufferedStream(StdioRWC{}, jsonrpc2.VSCodeObjectCodec{}), handler)
-	return server
+	return &server
 }
 
 func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn, request *jsonrpc2.Request) (interface{}, error) {
@@ -70,7 +71,12 @@ func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn,
 			return nil, err
 		}
 		return server.onSemanticTokensFull(ctx, params)
-
+	case "textDocument/didChange":
+		params := lsp.DidChangeTextDocumentParams{}
+		if err := json.Unmarshal(*request.Params, &params); err != nil {
+			return nil, err
+		}
+		return nil, server.onTextDocumentDidChange(ctx, params)
 	default:
 		return nil, fmt.Errorf("unsupported request method '%s'", request.Method)
 	}
@@ -86,10 +92,15 @@ type poryscriptServer struct {
 	cachedConstants  map[string]map[string]parse.ConstantSymbol
 	cachedSymbols    map[string]map[string]parse.Symbol
 	cachedMiscTokens map[string]map[string]parse.MiscToken
+	documentsMutex   sync.Mutex
+	commandsMutex    sync.Mutex
+	constantsMutex   sync.Mutex
+	symbolsMutex     sync.Mutex
+	miscTokensMutex  sync.Mutex
 }
 
 // Runs the LSP server indefinitely.
-func (s poryscriptServer) Run() {
+func (s *poryscriptServer) Run() {
 	<-s.connection.DisconnectNotify()
 }
 
@@ -155,7 +166,7 @@ func (s *poryscriptServer) onInitialized(ctx context.Context) error {
 		os.Stderr.WriteString(err.Error())
 	}
 	for _, filepath := range filepaths {
-		if _, err := s.getAndCacheSymbolsInFile(ctx, "file://"+filepath); err != nil {
+		if _, err := s.getSymbolsInFile(ctx, "file://"+filepath); err != nil {
 			os.Stderr.WriteString(err.Error())
 		}
 	}
@@ -196,9 +207,8 @@ func (s *poryscriptServer) onCompletion(ctx context.Context, req lsp.CompletionP
 // Handles an incoming LSP 'textDocument/definition' request.
 // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_definition
 func (s *poryscriptServer) onDefinition(ctx context.Context, req lsp.DefinitionParams) ([]lsp.Location, error) {
-	file, _ := url.QueryUnescape(string(req.TextDocument.URI))
-	var content string
-	if err := s.connection.Call(ctx, "poryscript/readfs", file, &content); err != nil {
+	content, err := s.getDocumentContent(ctx, string(req.TextDocument.URI))
+	if err != nil {
 		return []lsp.Location{}, err
 	}
 	token := parse.GetTokenAt(content, req.Position.Line, req.Position.Character)
@@ -275,8 +285,8 @@ func (s *poryscriptServer) onTextDocumentDidChange(ctx context.Context, req lsp.
 	if len(req.ContentChanges) == 0 {
 		return nil
 	}
-	file, _ := url.QueryUnescape(string(req.TextDocument.URI))
-	s.cachedDocuments[file] = req.ContentChanges[0].Text
+	fileUri, _ := url.QueryUnescape(string(req.TextDocument.URI))
+	s.clearCaches(fileUri)
 	return nil
 }
 

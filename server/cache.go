@@ -8,10 +8,10 @@ import (
 )
 
 // Gets the aggregate list of Commands from the collection of files that define
-// the Commands. The Commands are cached for the given file so that parsing is avoided
-// in future calls.
-func (s *poryscriptServer) getCommands(ctx context.Context, file string) (map[string]parse.Command, error) {
-	settings, err := s.config.GetFileSettings(ctx, s.connection, file)
+// the Commands. The Commands are cached for the given file uri so that parsing is
+// avoided in future calls.
+func (s *poryscriptServer) getCommands(ctx context.Context, uri string) (map[string]parse.Command, error) {
+	settings, err := s.config.GetFileSettings(ctx, s.connection, uri)
 	if err != nil {
 		return nil, err
 	}
@@ -33,22 +33,25 @@ func (s *poryscriptServer) getCommands(ctx context.Context, file string) (map[st
 	return commands, nil
 }
 
-// Gets the list of Commands from the given file. The Commands
-// are cached for the given file so that parsing is avoided in future
+// Gets the list of Commands from the given file uri. The Commands
+// are cached for the file so that parsing is avoided in future
 // calls.
-func (s *poryscriptServer) getCommandsInFile(ctx context.Context, file string) (map[string]parse.Command, error) {
-	file, _ = url.QueryUnescape(file)
-	if commands, ok := s.cachedCommands[file]; ok {
+func (s *poryscriptServer) getCommandsInFile(ctx context.Context, uri string) (map[string]parse.Command, error) {
+	s.commandsMutex.Lock()
+	defer s.commandsMutex.Unlock()
+
+	uri, _ = url.QueryUnescape(uri)
+	if commands, ok := s.cachedCommands[uri]; ok {
 		return commands, nil
 	}
-	return s.getAndCacheCommandsInFile(ctx, file)
+	return s.getAndCacheCommandsInFile(ctx, uri)
 }
 
-// Fetches and caches the Commands from the given file.
-func (s *poryscriptServer) getAndCacheCommandsInFile(ctx context.Context, file string) (map[string]parse.Command, error) {
-	file, _ = url.QueryUnescape(file)
+// Fetches and caches the Commands from the given file uri.
+func (s *poryscriptServer) getAndCacheCommandsInFile(ctx context.Context, uri string) (map[string]parse.Command, error) {
+	uri, _ = url.QueryUnescape(uri)
 	var content string
-	if err := s.connection.Call(ctx, "poryscript/readfile", file, &content); err != nil {
+	if err := s.connection.Call(ctx, "poryscript/readfile", uri, &content); err != nil {
 		return nil, err
 	}
 	if !s.config.HasWorkspaceFolderCapability {
@@ -59,73 +62,81 @@ func (s *poryscriptServer) getAndCacheCommandsInFile(ctx context.Context, file s
 	for _, c := range commands {
 		commandSet[c.Name] = c
 	}
-	s.cachedCommands[file] = commandSet
+	s.cachedCommands[uri] = commandSet
 	return commandSet, nil
 }
 
-// Gets the list of poryscript constants from the given file. The constants
-// are cached for the given file so that parsing is avoided in future calls.
-func (s *poryscriptServer) getConstantsInFile(ctx context.Context, file string) (map[string]parse.ConstantSymbol, error) {
-	file, _ = url.QueryUnescape(file)
-	if constants, ok := s.cachedConstants[file]; ok {
+// Gets the list of poryscript constants from the given file uri. The constants
+// are cached for the file so that parsing is avoided in future calls.
+func (s *poryscriptServer) getConstantsInFile(ctx context.Context, uri string) (map[string]parse.ConstantSymbol, error) {
+	s.constantsMutex.Lock()
+	defer s.constantsMutex.Unlock()
+
+	uri, _ = url.QueryUnescape(uri)
+	if constants, ok := s.cachedConstants[uri]; ok {
 		return constants, nil
 	}
-	return s.getAndCacheConstantsInFile(ctx, file)
+	return s.getAndCacheConstantsInFile(ctx, uri)
 }
 
-// Fetches and caches the poryscript constants from the given file.
-func (s *poryscriptServer) getAndCacheConstantsInFile(ctx context.Context, file string) (map[string]parse.ConstantSymbol, error) {
-	file, _ = url.QueryUnescape(file)
-	content, err := s.getDocumentContent(ctx, file)
+// Fetches and caches the poryscript constants from the given file uri.
+func (s *poryscriptServer) getAndCacheConstantsInFile(ctx context.Context, uri string) (map[string]parse.ConstantSymbol, error) {
+	uri, _ = url.QueryUnescape(uri)
+	content, err := s.getDocumentContent(ctx, uri)
 	if err != nil {
 		return nil, err
 	}
-	constants := parse.ParseConstants(content, file)
+	constants := parse.ParseConstants(content, uri)
 	constantSet := map[string]parse.ConstantSymbol{}
 	for _, c := range constants {
 		constantSet[c.Name] = c
 	}
-	s.cachedConstants[file] = constantSet
+	s.cachedConstants[uri] = constantSet
 	return constantSet, nil
 }
 
-// Gets the list of poryscript symbols from the given file. The symbols
-// are cached for the given file so that parsing is avoided in future calls.
-func (s *poryscriptServer) getSymbolsInFile(ctx context.Context, file string) (map[string]parse.Symbol, error) {
-	file, _ = url.QueryUnescape(file)
-	if symbols, ok := s.cachedSymbols[file]; ok {
+// Gets the list of poryscript symbols from the given file uri. The symbols
+// are cached for the file so that parsing is avoided in future calls.
+func (s *poryscriptServer) getSymbolsInFile(ctx context.Context, uri string) (map[string]parse.Symbol, error) {
+	s.symbolsMutex.Lock()
+	defer s.symbolsMutex.Unlock()
+
+	uri, _ = url.QueryUnescape(uri)
+	if symbols, ok := s.cachedSymbols[uri]; ok {
 		return symbols, nil
 	}
-	return s.getAndCacheSymbolsInFile(ctx, file)
+	return s.getAndCacheSymbolsInFile(ctx, uri)
 }
 
-// Fetches and caches the poryscript symbols from the given file.
-func (s *poryscriptServer) getAndCacheSymbolsInFile(ctx context.Context, file string) (map[string]parse.Symbol, error) {
-	file, _ = url.QueryUnescape(file)
-	content, err := s.getDocumentContent(ctx, file)
+// Fetches and caches the poryscript symbols from the given file uri.
+func (s *poryscriptServer) getAndCacheSymbolsInFile(ctx context.Context, uri string) (map[string]parse.Symbol, error) {
+	uri, _ = url.QueryUnescape(uri)
+	content, err := s.getDocumentContent(ctx, uri)
 	if err != nil {
 		return nil, err
 	}
-	symbols := parse.ParseSymbols(content, file)
+	symbols := parse.ParseSymbols(content, uri)
 	symbolSet := map[string]parse.Symbol{}
 	for _, s := range symbols {
 		symbolSet[s.Name] = s
 	}
-	s.cachedSymbols[file] = symbolSet
+	s.cachedSymbols[uri] = symbolSet
 	return symbolSet, nil
 }
 
 // Gets the aggregate list of miscellaneous tokens from the collection of files
 // specified in the settings.
-func (s *poryscriptServer) getMiscTokens(ctx context.Context, file string) (map[string]parse.MiscToken, error) {
-	file, _ = url.QueryUnescape(file)
-	settings, err := s.config.GetFileSettings(ctx, s.connection, file)
+func (s *poryscriptServer) getMiscTokens(ctx context.Context, uri string) (map[string]parse.MiscToken, error) {
+	uri, _ = url.QueryUnescape(uri)
+	settings, err := s.config.GetFileSettings(ctx, s.connection, uri)
 	if err != nil {
 		return nil, err
 	}
 	miscTokens := map[string]parse.MiscToken{}
 	for _, includeSetting := range settings.SymbolIncludes {
+		s.miscTokensMutex.Lock()
 		tokens, err := s.getMiscTokensInFile(ctx, includeSetting.Expression, includeSetting.Type, includeSetting.File)
+		s.miscTokensMutex.Unlock()
 		if err != nil {
 			// TODO: log error?
 			continue
@@ -137,25 +148,25 @@ func (s *poryscriptServer) getMiscTokens(ctx context.Context, file string) (map[
 	return miscTokens, nil
 }
 
-// Gets the list of miscellaneous tokens from the given file. The tokens
-// are cached for the given file so that parsing is avoided in future calls.
-func (s *poryscriptServer) getMiscTokensInFile(ctx context.Context, expression, tokenType, file string) (map[string]parse.MiscToken, error) {
-	file, _ = url.QueryUnescape(file)
-	if tokens, ok := s.cachedMiscTokens[file+expression]; ok {
+// Gets the list of miscellaneous tokens from the given file uri. The tokens
+// are cached for the file so that parsing is avoided in future calls.
+func (s *poryscriptServer) getMiscTokensInFile(ctx context.Context, expression, tokenType, uri string) (map[string]parse.MiscToken, error) {
+	uri, _ = url.QueryUnescape(uri)
+	if tokens, ok := s.cachedMiscTokens[uri+expression]; ok {
 		return tokens, nil
 	}
-	return s.getAndCacheMiscTokensInFile(ctx, expression, tokenType, file)
+	return s.getAndCacheMiscTokensInFile(ctx, expression, tokenType, uri)
 }
 
-// Fetches and caches the miscellaneous tokens from the given file.
-func (s *poryscriptServer) getAndCacheMiscTokensInFile(ctx context.Context, expression, tokenType, file string) (map[string]parse.MiscToken, error) {
-	file, _ = url.QueryUnescape(file)
+// Fetches and caches the miscellaneous tokens from the given file uri.
+func (s *poryscriptServer) getAndCacheMiscTokensInFile(ctx context.Context, expression, tokenType, uri string) (map[string]parse.MiscToken, error) {
+	uri, _ = url.QueryUnescape(uri)
 	var content string
-	if err := s.connection.Call(ctx, "poryscript/readfile", file, &content); err != nil {
+	if err := s.connection.Call(ctx, "poryscript/readfile", uri, &content); err != nil {
 		return nil, err
 	}
 	var fileUri string
-	if err := s.connection.Call(ctx, "poryscript/getfileuri", file, &fileUri); err != nil {
+	if err := s.connection.Call(ctx, "poryscript/getfileuri", uri, &fileUri); err != nil {
 		return nil, err
 	}
 	tokens := parse.ParseMiscTokens(content, expression, tokenType, fileUri)
@@ -163,27 +174,39 @@ func (s *poryscriptServer) getAndCacheMiscTokensInFile(ctx context.Context, expr
 	for _, t := range tokens {
 		tokenSet[t.Name] = t
 	}
-	s.cachedMiscTokens[file+expression] = tokenSet
+	s.cachedMiscTokens[uri+expression] = tokenSet
 	return tokenSet, nil
 }
 
-// Gets the content for the given file. The content is cached
-// for the given file so that parsing is avoided in future calls.//
-func (s *poryscriptServer) getDocumentContent(ctx context.Context, file string) (string, error) {
-	file, _ = url.QueryUnescape(file)
-	if content, ok := s.cachedDocuments[file]; ok {
+// Gets the content for the given file uri. The content is cached
+// for the file so that parsing is avoided in future calls.
+func (s *poryscriptServer) getDocumentContent(ctx context.Context, uri string) (string, error) {
+	s.documentsMutex.Lock()
+	defer s.documentsMutex.Unlock()
+
+	uri, _ = url.QueryUnescape(uri)
+	if content, ok := s.cachedDocuments[uri]; ok {
 		return content, nil
 	}
-	return s.getAndCacheDocumentContent(ctx, file)
+	return s.getAndCacheDocumentContent(ctx, uri)
 }
 
-// Fetches and caches the content for the given file.
-func (s *poryscriptServer) getAndCacheDocumentContent(ctx context.Context, file string) (string, error) {
-	file, _ = url.QueryUnescape(file)
+// Fetches and caches the content for the given file uri.
+func (s *poryscriptServer) getAndCacheDocumentContent(ctx context.Context, uri string) (string, error) {
+	uri, _ = url.QueryUnescape(uri)
 	var content string
-	if err := s.connection.Call(ctx, "poryscript/readfs", file, &content); err != nil {
+	if err := s.connection.Call(ctx, "poryscript/readfs", uri, &content); err != nil {
 		return "", err
 	}
-	s.cachedDocuments[file] = content
+	s.cachedDocuments[uri] = content
 	return content, nil
+}
+
+// Clears the various cached artifacts for the given file uri.
+func (s *poryscriptServer) clearCaches(uri string) {
+	delete(s.cachedDocuments, uri)
+	delete(s.cachedCommands, uri)
+	delete(s.cachedConstants, uri)
+	delete(s.cachedSymbols, uri)
+	delete(s.cachedMiscTokens, uri)
 }
