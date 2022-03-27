@@ -71,6 +71,12 @@ func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn,
 			return nil, err
 		}
 		return server.onSemanticTokensFull(ctx, params)
+	case "textDocument/didOpen":
+		params := lsp.DidOpenTextDocumentParams{}
+		if err := json.Unmarshal(*request.Params, &params); err != nil {
+			return nil, err
+		}
+		return nil, server.onTextDocumentDidOpen(ctx, params)
 	case "textDocument/didChange":
 		params := lsp.DidChangeTextDocumentParams{}
 		if err := json.Unmarshal(*request.Params, &params); err != nil {
@@ -277,6 +283,14 @@ func (s *poryscriptServer) onSignatureHelp(ctx context.Context, req lsp.Signatur
 			},
 		},
 	}, nil
+}
+
+// Handles an incoming LSP 'textDocument/didOpen' request.
+// https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_didOpen
+func (s *poryscriptServer) onTextDocumentDidOpen(ctx context.Context, req lsp.DidOpenTextDocumentParams) error {
+	fileUri, _ := url.QueryUnescape(string(req.TextDocument.URI))
+	_, err := s.getDocumentContent(ctx, fileUri)
+	return err
 }
 
 // Handles an incoming LSP 'textDocument/didChange' request.
