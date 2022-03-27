@@ -83,6 +83,12 @@ func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn,
 			return nil, err
 		}
 		return nil, server.onTextDocumentDidChange(ctx, params)
+	case "workspace/didChangeConfiguration":
+		params := lsp.DidChangeConfigurationParams{}
+		if err := json.Unmarshal(*request.Params, &params); err != nil {
+			return nil, err
+		}
+		return nil, server.onDidChangeConfiguration(ctx, params)
 	default:
 		return nil, fmt.Errorf("unsupported request method '%s'", request.Method)
 	}
@@ -301,6 +307,13 @@ func (s *poryscriptServer) onTextDocumentDidChange(ctx context.Context, req lsp.
 	}
 	fileUri, _ := url.QueryUnescape(string(req.TextDocument.URI))
 	s.clearCaches(fileUri)
+	return nil
+}
+
+// Handles an incoming LSP 'workspace/didChangeConfiguration' request.
+// https://microsoft.github.io/language-server-protocol/specifications/specification-current/#workspace_didChangeConfiguration
+func (s *poryscriptServer) onDidChangeConfiguration(ctx context.Context, req lsp.DidChangeConfigurationParams) error {
+	s.config.ClearSettings()
 	return nil
 }
 

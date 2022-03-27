@@ -45,6 +45,11 @@ func New() Config {
 	}
 }
 
+// Completely clears the cached settings.
+func (c *Config) ClearSettings() {
+	c.FileSettings = map[string]PoryscriptSettings{}
+}
+
 // GetFileSettings retrieves the PoryscriptSettings associated with the given file.
 // If the client doesn't support configuration, it returns the default settings.
 // Settings are cached on a filepath-by-filepath basis..
