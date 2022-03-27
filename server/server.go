@@ -89,6 +89,12 @@ func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn,
 			return nil, err
 		}
 		return nil, server.onDidChangeConfiguration(ctx, params)
+	case "workspace/didChangeWatchedFiles":
+		params := lsp.DidChangeWatchedFilesParams{}
+		if err := json.Unmarshal(*request.Params, &params); err != nil {
+			return nil, err
+		}
+		return nil, server.onDidChangeWatchedFiles(ctx, params)
 	default:
 		return nil, fmt.Errorf("unsupported request method '%s'", request.Method)
 	}
@@ -314,6 +320,15 @@ func (s *poryscriptServer) onTextDocumentDidChange(ctx context.Context, req lsp.
 // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#workspace_didChangeConfiguration
 func (s *poryscriptServer) onDidChangeConfiguration(ctx context.Context, req lsp.DidChangeConfigurationParams) error {
 	s.config.ClearSettings()
+	return nil
+}
+
+// Handles an incoming LSP 'workspace/didChangeWatchedFiles' request.
+// https://microsoft.github.io/language-server-protocol/specifications/specification-current/#workspace_didChangeWatchedFiles
+func (s *poryscriptServer) onDidChangeWatchedFiles(ctx context.Context, req lsp.DidChangeWatchedFilesParams) error {
+	// TODO: this should only clear/update the cache for the actual watched files that changed.
+	// This approach that clears way more cached data than necessary.
+	s.clearWatchedFileCaches()
 	return nil
 }
 

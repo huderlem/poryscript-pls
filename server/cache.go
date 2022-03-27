@@ -204,9 +204,29 @@ func (s *poryscriptServer) getAndCacheDocumentContent(ctx context.Context, uri s
 
 // Clears the various cached artifacts for the given file uri.
 func (s *poryscriptServer) clearCaches(uri string) {
+	s.documentsMutex.Lock()
+	defer s.documentsMutex.Unlock()
+	s.commandsMutex.Lock()
+	defer s.commandsMutex.Unlock()
+	s.constantsMutex.Lock()
+	defer s.constantsMutex.Unlock()
+	s.symbolsMutex.Lock()
+	defer s.symbolsMutex.Unlock()
+	s.miscTokensMutex.Lock()
+	defer s.miscTokensMutex.Unlock()
 	delete(s.cachedDocuments, uri)
 	delete(s.cachedCommands, uri)
 	delete(s.cachedConstants, uri)
 	delete(s.cachedSymbols, uri)
 	delete(s.cachedMiscTokens, uri)
+}
+
+// Clears the various cached artifacts for watched files (.inc and .h files).
+func (s *poryscriptServer) clearWatchedFileCaches() {
+	s.commandsMutex.Lock()
+	defer s.commandsMutex.Unlock()
+	s.miscTokensMutex.Lock()
+	defer s.miscTokensMutex.Unlock()
+	s.cachedCommands = map[string]map[string]parse.Command{}
+	s.cachedMiscTokens = map[string]map[string]parse.MiscToken{}
 }
