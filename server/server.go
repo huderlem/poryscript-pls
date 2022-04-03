@@ -313,6 +313,7 @@ func (s *poryscriptServer) onTextDocumentDidChange(ctx context.Context, req lsp.
 	}
 	fileUri, _ := url.QueryUnescape(string(req.TextDocument.URI))
 	s.clearCaches(fileUri)
+	s.validatePoryscriptFile(ctx, fileUri)
 	return nil
 }
 
