@@ -22,23 +22,25 @@ func TestCommandToCompletionItem(t *testing.T) {
 				Name:          "foo",
 				Documentation: "the doc",
 				Detail:        "the detail",
+				Kind:          CommandScriptMacro,
 			},
 			expected: lsp.CompletionItem{Label: "foo", Documentation: "the doc", Detail: "the detail", Kind: lsp.CIKKeyword},
 		},
 		{
 			input: Command{
-				Name:          "baz",
-				Kind:          lsp.CIKFunction,
-				Documentation: "doc 2",
-				Detail:        "detail 2",
+				Name:           "baz",
+				CompletionKind: lsp.CIKFunction,
+				Documentation:  "doc 2",
+				Detail:         "detail 2",
+				Kind:           CommandScriptMacro,
 			},
 			expected: lsp.CompletionItem{Label: "baz", Documentation: "doc 2", Detail: "detail 2", Kind: lsp.CIKFunction},
 		},
 		{
 			input: Command{
-				Name:       "baz",
-				Kind:       lsp.CIKFunction,
-				InsertText: "insert me",
+				Name:           "baz",
+				CompletionKind: lsp.CIKFunction,
+				InsertText:     "insert me",
 			},
 			expected: lsp.CompletionItem{Label: "baz", Kind: lsp.CIKFunction, InsertText: "insert me", InsertTextFormat: lsp.ITFSnippet},
 		},
@@ -69,9 +71,10 @@ setorcopyvar VAR_0x8000, \item
 `
 	expected := []Command{
 		{
-			Name:          "msgbox",
-			Kind:          lsp.CIKFunction,
-			Documentation: "Buffers the given text and calls the relevant standard message script (see gStdScripts).",
+			Name:           "msgbox",
+			Kind:           CommandScriptMacro,
+			CompletionKind: lsp.CIKFunction,
+			Documentation:  "Buffers the given text and calls the relevant standard message script (see gStdScripts).",
 			Parameters: []CommandParam{
 				{
 					Name: "text",
@@ -89,9 +92,10 @@ setorcopyvar VAR_0x8000, \item
 			},
 		},
 		{
-			Name:          "giveitem",
-			Kind:          lsp.CIKFunction,
-			Documentation: "Gives 'amount' of the specified 'item' to the player and prints a message with fanfare. If the player doesn't have space for all the items then as many are added as possible, the",
+			Name:           "giveitem",
+			Kind:           CommandScriptMacro,
+			CompletionKind: lsp.CIKFunction,
+			Documentation:  "Gives 'amount' of the specified 'item' to the player and prints a message with fanfare. If the player doesn't have space for all the items then as many are added as possible, the",
 			Parameters: []CommandParam{
 				{
 					Name:    "amount",
@@ -105,10 +109,11 @@ setorcopyvar VAR_0x8000, \item
 			},
 		},
 		{
-			Name:          "noop",
-			Kind:          lsp.CIKFunction,
-			Documentation: "",
-			Parameters:    []CommandParam{},
+			Name:           "noop",
+			Kind:           CommandScriptMacro,
+			CompletionKind: lsp.CIKFunction,
+			Documentation:  "",
+			Parameters:     []CommandParam{},
 		},
 	}
 	results := parseMacroCommands(input)
@@ -275,12 +280,12 @@ MSGBOX_DEFAULT = 4
 	YES = 1
 NO  = 0`
 	expected := []Command{
-		{Name: "MSGBOX_NPC", Kind: lsp.CIKConstant, Detail: "2"},
-		{Name: "NO_MUSIC", Kind: lsp.CIKConstant, Detail: "FALSE"},
-		{Name: "MSGBOX_DEFAULT", Kind: lsp.CIKConstant, Detail: "4"},
-		{Name: "MSGBOX_YESNO", Kind: lsp.CIKConstant, Detail: "5"},
-		{Name: "YES", Kind: lsp.CIKConstant, Detail: "1"},
-		{Name: "NO", Kind: lsp.CIKConstant, Detail: "0"},
+		{Name: "MSGBOX_NPC", Kind: CommandAssemblyConstant, CompletionKind: lsp.CIKConstant, Detail: "2"},
+		{Name: "NO_MUSIC", Kind: CommandAssemblyConstant, CompletionKind: lsp.CIKConstant, Detail: "FALSE"},
+		{Name: "MSGBOX_DEFAULT", Kind: CommandAssemblyConstant, CompletionKind: lsp.CIKConstant, Detail: "4"},
+		{Name: "MSGBOX_YESNO", Kind: CommandAssemblyConstant, CompletionKind: lsp.CIKConstant, Detail: "5"},
+		{Name: "YES", Kind: CommandAssemblyConstant, CompletionKind: lsp.CIKConstant, Detail: "1"},
+		{Name: "NO", Kind: CommandAssemblyConstant, CompletionKind: lsp.CIKConstant, Detail: "0"},
 	}
 	results := parseAssemblyConstants(input)
 	if len(expected) != len(results) {
@@ -305,9 +310,9 @@ func TestParseMovementConstants(t *testing.T) {
 create_movement_action face_up, MOVEMENT_ACTION_FACE_UP
   	create_movement_action face_left, MOVEMENT_ACTION_FACE_LEFT`
 	expected := []Command{
-		{Name: "face_down", Kind: lsp.CIKConstant, Detail: "MOVEMENT_ACTION_FACE_DOWN"},
-		{Name: "face_up", Kind: lsp.CIKConstant, Detail: "MOVEMENT_ACTION_FACE_UP"},
-		{Name: "face_left", Kind: lsp.CIKConstant, Detail: "MOVEMENT_ACTION_FACE_LEFT"},
+		{Name: "face_down", Kind: CommandMovement, CompletionKind: lsp.CIKConstant, Detail: "MOVEMENT_ACTION_FACE_DOWN"},
+		{Name: "face_up", Kind: CommandMovement, CompletionKind: lsp.CIKConstant, Detail: "MOVEMENT_ACTION_FACE_UP"},
+		{Name: "face_left", Kind: CommandMovement, CompletionKind: lsp.CIKConstant, Detail: "MOVEMENT_ACTION_FACE_LEFT"},
 	}
 	results := parseMovementConstants(input)
 	if len(expected) != len(results) {

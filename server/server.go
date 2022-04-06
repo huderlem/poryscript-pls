@@ -302,6 +302,7 @@ func (s *poryscriptServer) onSignatureHelp(ctx context.Context, req lsp.Signatur
 func (s *poryscriptServer) onTextDocumentDidOpen(ctx context.Context, req lsp.DidOpenTextDocumentParams) error {
 	fileUri, _ := url.QueryUnescape(string(req.TextDocument.URI))
 	_, err := s.getDocumentContent(ctx, fileUri)
+	s.validatePoryscriptFile(ctx, fileUri)
 	return err
 }
 
@@ -370,7 +371,7 @@ func (s *poryscriptServer) onSemanticTokensFull(ctx context.Context, req lsp.Sem
 		if command, ok := commands[t.Literal]; ok {
 			// 'switch' and 'case' are both Poryscript keywords and scripting commands.
 			if t.Literal != "switch" && t.Literal != "case" {
-				switch command.Kind {
+				switch command.CompletionKind {
 				case lsp.CIKFunction:
 					builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 1, 0)
 				case lsp.CIKConstant:

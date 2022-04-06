@@ -10,13 +10,24 @@ import (
 
 // Command represents a gen 3 Pokémon decomp scripting command
 type Command struct {
-	Name          string
-	Documentation string
-	Detail        string
-	Kind          lsp.CompletionItemKind
-	InsertText    string
-	Parameters    []CommandParam
+	Name           string
+	Documentation  string
+	Detail         string
+	Kind           CommandKind
+	CompletionKind lsp.CompletionItemKind
+	InsertText     string
+	Parameters     []CommandParam
 }
+
+type CommandKind int
+
+const (
+	_ CommandKind = iota
+	CommandScriptMacro
+	CommandAssemblyConstant
+	CommandMovement
+	CommandPoryscriptKeyword
+)
 
 // CommandParam represents a macro parameter for a scripting command.
 type CommandParam struct {
@@ -37,7 +48,7 @@ const (
 
 // Returns the lsp.CompletionItem representation of a Command.
 func (c Command) ToCompletionItem() lsp.CompletionItem {
-	kind := c.Kind
+	kind := c.CompletionKind
 	if kind == 0 {
 		kind = lsp.CIKKeyword
 	}
@@ -137,10 +148,11 @@ func parseMacroCommands(content string) []Command {
 		nameStart, nameEnd := match[2], match[3]
 		paramStart, paramEnd := match[4], match[5]
 		command := Command{
-			Name:          content[nameStart:nameEnd],
-			Kind:          lsp.CIKFunction,
-			Documentation: parseCommandDocumentation(content, nameStart),
-			Parameters:    parseMacroParameters(content[paramStart:paramEnd]),
+			Name:           content[nameStart:nameEnd],
+			Kind:           CommandScriptMacro,
+			CompletionKind: lsp.CIKFunction,
+			Documentation:  parseCommandDocumentation(content, nameStart),
+			Parameters:     parseMacroParameters(content[paramStart:paramEnd]),
 		}
 		commands = append(commands, command)
 	}
@@ -253,9 +265,10 @@ func parseAssemblyConstants(content string) []Command {
 	re, _ := regexp.Compile(`(?m)^[\t ]*(\w+)[\t ]*=[\t ]*([\w\d]+)[\w\t]*$`)
 	for _, match := range re.FindAllStringSubmatch(content, -1) {
 		command := Command{
-			Name:   match[1],
-			Kind:   lsp.CIKConstant,
-			Detail: match[2],
+			Name:           match[1],
+			Kind:           CommandAssemblyConstant,
+			CompletionKind: lsp.CIKConstant,
+			Detail:         match[2],
 		}
 		commands = append(commands, command)
 	}
@@ -268,9 +281,10 @@ func parseMovementConstants(content string) []Command {
 	re, _ := regexp.Compile(`(?m)^[\t ]*(?:create_movement_action)[\t ]* ([\w\d]+),[\t ]*([\w\d]*)$`)
 	for _, match := range re.FindAllStringSubmatch(content, -1) {
 		command := Command{
-			Name:   match[1],
-			Kind:   lsp.CIKConstant,
-			Detail: match[2],
+			Name:           match[1],
+			Kind:           CommandMovement,
+			CompletionKind: lsp.CIKConstant,
+			Detail:         match[2],
 		}
 		commands = append(commands, command)
 	}
@@ -280,68 +294,79 @@ func parseMovementConstants(content string) []Command {
 // Keyword commands reserved by Poryscript's language.
 var KeywordCommands = []Command{
 	{
-		Name:       "script",
-		Detail:     "Script (Poryscript)",
-		Kind:       lsp.CIKClass,
-		InsertText: "script ${0:MyScript} {\n    \n}",
+		Name:           "script",
+		Detail:         "Script (Poryscript)",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKClass,
+		InsertText:     "script ${0:MyScript} {\n    \n}",
 	},
 	{
-		Name:       "movement",
-		Detail:     "Movement (Poryscript)",
-		Kind:       lsp.CIKClass,
-		InsertText: "movement ${0:MyMovement} {\n    \n}",
+		Name:           "movement",
+		Detail:         "Movement (Poryscript)",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKClass,
+		InsertText:     "movement ${0:MyMovement} {\n    \n}",
 	},
 	{
-		Name:       "mapscripts",
-		Detail:     "Mapscript Section (Poryscript)",
-		Kind:       lsp.CIKClass,
-		InsertText: "mapscripts ${0:MyMapscripts} {\n    \n}",
+		Name:           "mapscripts",
+		Detail:         "Mapscript Section (Poryscript)",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKClass,
+		InsertText:     "mapscripts ${0:MyMapscripts} {\n    \n}",
 	},
 	{
-		Name:       "text",
-		Detail:     "Text (Poryscript)",
-		Kind:       lsp.CIKClass,
-		InsertText: "text ${0:MyString} {\n    \n}",
+		Name:           "text",
+		Detail:         "Text (Poryscript)",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKClass,
+		InsertText:     "text ${0:MyString} {\n    \n}",
 	},
 	{
-		Name:       "raw",
-		Detail:     "Raw Section (Poryscript)",
-		Kind:       lsp.CIKClass,
-		InsertText: "raw `\n$0\n`",
+		Name:           "raw",
+		Detail:         "Raw Section (Poryscript)",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKClass,
+		InsertText:     "raw `\n$0\n`",
 	},
 	{
-		Name:   "local",
-		Detail: "Local Scope (Poryscript)",
-		Kind:   lsp.CIKKeyword,
+		Name:           "local",
+		Detail:         "Local Scope (Poryscript)",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKKeyword,
 	},
 	{
-		Name:   "global",
-		Detail: "Global Scope (Poryscript)",
-		Kind:   lsp.CIKKeyword,
+		Name:           "global",
+		Detail:         "Global Scope (Poryscript)",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKKeyword,
 	},
 	{
-		Name:       "format",
-		Detail:     "Format String",
-		Kind:       lsp.CIKFunction,
-		InsertText: "format(\"$0\")",
+		Name:           "format",
+		Detail:         "Format String",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKFunction,
+		InsertText:     "format(\"$0\")",
 	},
 	{
-		Name:       "var",
-		Detail:     "Get the value of a variable",
-		Kind:       lsp.CIKReference,
-		InsertText: "var(${0:VAR_ID})",
+		Name:           "var",
+		Detail:         "Get the value of a variable",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKReference,
+		InsertText:     "var(${0:VAR_ID})",
 	},
 	{
-		Name:       "flag",
-		Detail:     "Get the value of a flag",
-		Kind:       lsp.CIKReference,
-		InsertText: "flag(${0:FLAG_ID})",
+		Name:           "flag",
+		Detail:         "Get the value of a flag",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKReference,
+		InsertText:     "flag(${0:FLAG_ID})",
 	},
 	{
-		Name:       "defeated",
-		Detail:     "Get the status of a trainer",
-		Kind:       lsp.CIKReference,
-		InsertText: "defeated(${0:TRAINER_ID})",
+		Name:           "defeated",
+		Detail:         "Get the status of a trainer",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKReference,
+		InsertText:     "defeated(${0:TRAINER_ID})",
 	},
 	{
 		Name:       "poryswitch",
@@ -355,35 +380,43 @@ var KeywordCommands = []Command{
 		},
 	},
 	{
-		Name: "if",
-		Kind: lsp.CIKKeyword,
+		Name:           "if",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKKeyword,
 	},
 	{
-		Name: "elif",
-		Kind: lsp.CIKKeyword,
+		Name:           "elif",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKKeyword,
 	},
 	{
-		Name: "else",
-		Kind: lsp.CIKKeyword,
+		Name:           "else",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKKeyword,
 	},
 	{
-		Name: "while",
-		Kind: lsp.CIKKeyword,
+		Name:           "while",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKKeyword,
 	},
 	{
-		Name: "switch",
-		Kind: lsp.CIKKeyword,
+		Name:           "switch",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKKeyword,
 	},
 	{
-		Name: "case",
-		Kind: lsp.CIKKeyword,
+		Name:           "case",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKKeyword,
 	},
 	{
-		Name: "break",
-		Kind: lsp.CIKKeyword,
+		Name:           "break",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKKeyword,
 	},
 	{
-		Name: "continue",
-		Kind: lsp.CIKKeyword,
+		Name:           "continue",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKKeyword,
 	},
 }
