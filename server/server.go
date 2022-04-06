@@ -336,8 +336,9 @@ func (s *poryscriptServer) onDidChangeWatchedFiles(ctx context.Context, req lsp.
 // Handles an incoming LSP 'textDocument/semanticTokens/full' request.
 // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_semanticTokens
 func (s *poryscriptServer) onSemanticTokensFull(ctx context.Context, req lsp.SemanticTokensParams) (lsp.SemanticTokens, error) {
-	content, err := s.getDocumentContent(ctx, string(req.TextDocument.URI))
-	if err != nil {
+	uri, _ := url.QueryUnescape(string(req.TextDocument.URI))
+	var content string
+	if err := s.connection.Call(ctx, "poryscript/readfs", uri, &content); err != nil {
 		return lsp.SemanticTokens{}, err
 	}
 
