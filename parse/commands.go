@@ -278,13 +278,13 @@ func parseAssemblyConstants(content string) []Command {
 // Parses the movement-related assembler constants from the given file content.
 func parseMovementConstants(content string) []Command {
 	commands := []Command{}
-	re, _ := regexp.Compile(`(?m)^[\t ]*(?:create_movement_action)[\t ]* ([\w\d]+),[\t ]*([\w\d]*)$`)
+	re, _ := regexp.Compile(`(?m)^[\t ]*(?:create_movement_action)[\t ]* ([\w\d]+)(\s*,[\t ]*([\w\d]*))?$`)
 	for _, match := range re.FindAllStringSubmatch(content, -1) {
 		command := Command{
 			Name:           match[1],
 			Kind:           CommandMovement,
 			CompletionKind: lsp.CIKConstant,
-			Detail:         match[2],
+			Detail:         match[3],
 		}
 		commands = append(commands, command)
 	}

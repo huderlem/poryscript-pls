@@ -308,11 +308,11 @@ func TestParseMovementConstants(t *testing.T) {
 
 	create_movement_action face_down, MOVEMENT_ACTION_FACE_DOWN
 create_movement_action face_up, MOVEMENT_ACTION_FACE_UP
-  	create_movement_action face_left, MOVEMENT_ACTION_FACE_LEFT`
+  	create_movement_action face_left`
 	expected := []Command{
 		{Name: "face_down", Kind: CommandMovement, CompletionKind: lsp.CIKConstant, Detail: "MOVEMENT_ACTION_FACE_DOWN"},
 		{Name: "face_up", Kind: CommandMovement, CompletionKind: lsp.CIKConstant, Detail: "MOVEMENT_ACTION_FACE_UP"},
-		{Name: "face_left", Kind: CommandMovement, CompletionKind: lsp.CIKConstant, Detail: "MOVEMENT_ACTION_FACE_LEFT"},
+		{Name: "face_left", Kind: CommandMovement, CompletionKind: lsp.CIKConstant, Detail: ""},
 	}
 	results := parseMovementConstants(input)
 	if len(expected) != len(results) {
