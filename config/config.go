@@ -3,10 +3,13 @@ package config
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/huderlem/poryscript-pls/lsp"
 	"github.com/sourcegraph/jsonrpc2"
 )
+
+var lock = sync.Mutex{}
 
 // Configuration for the Poryscript language server.
 type Config struct {
@@ -57,6 +60,8 @@ func (c *Config) GetFileSettings(ctx context.Context, conn jsonrpc2.JSONRPC2, fi
 	if !c.HasConfigCapability {
 		return defaultPoryscriptSettings, nil
 	}
+	lock.Lock()
+	defer lock.Unlock()
 	if settings, ok := c.FileSettings[filepath]; ok {
 		return settings, nil
 	}
