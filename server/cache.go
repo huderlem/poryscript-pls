@@ -204,8 +204,6 @@ func (s *poryscriptServer) getAndCacheDocumentContent(ctx context.Context, uri s
 
 // Clears the various cached artifacts for the given file uri.
 func (s *poryscriptServer) clearCaches(uri string) {
-	s.documentsMutex.Lock()
-	defer s.documentsMutex.Unlock()
 	s.commandsMutex.Lock()
 	defer s.commandsMutex.Unlock()
 	s.constantsMutex.Lock()
@@ -214,11 +212,15 @@ func (s *poryscriptServer) clearCaches(uri string) {
 	defer s.symbolsMutex.Unlock()
 	s.miscTokensMutex.Lock()
 	defer s.miscTokensMutex.Unlock()
-	delete(s.cachedDocuments, uri)
+	// The documents mutex lock must be acquired last, in order
+	// to avoid race conditions when loading the symbols and commands.
+	s.documentsMutex.Lock()
+	defer s.documentsMutex.Unlock()
 	delete(s.cachedCommands, uri)
 	delete(s.cachedConstants, uri)
 	delete(s.cachedSymbols, uri)
 	delete(s.cachedMiscTokens, uri)
+	delete(s.cachedDocuments, uri)
 }
 
 // Clears the various cached artifacts for watched files (.inc and .h files).
