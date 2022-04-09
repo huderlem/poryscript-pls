@@ -36,7 +36,6 @@ jobs:
     - name: Upload Codecov Results
       uses: codecov/codecov-action@v2
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
         files: ./coverage.txt
         env_vars: OS
         flags: unittests
