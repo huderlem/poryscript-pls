@@ -1,6 +1,8 @@
 # poryscript-pls
 
-The language server for [Poryscript](https://github.com/huderlem/poryscript). **This is in very early development.**
+[![Actions Status](https://github.com/huderlem/poryscript-pls/workflows/Go/badge.svg)](https://github.com/huderlem/poryscript-pls/actions) [![codecov](https://codecov.io/gh/huderlem/poryscript-pls/branch/master/graph/badge.svg)](https://codecov.io/gh/huderlem/poryscript-pls)
+
+The language server for [Poryscript](https://github.com/huderlem/poryscript).
 
 ## Local Development Setup
 
