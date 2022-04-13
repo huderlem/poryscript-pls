@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/huderlem/poryscript-pls/lsp"
 	"github.com/huderlem/poryscript-pls/parse"
@@ -18,6 +19,12 @@ func (s *poryscriptServer) validatePoryscriptFile(ctx context.Context, fileUri s
 	diagnostics := lsp.PublishDiagnosticsParams{
 		URI:         lsp.DocumentURI(fileUri),
 		Diagnostics: []lsp.Diagnostic{},
+	}
+	// Only publish diagnostics for Poryscript files.
+	// The language server also has tenuous support for script.inc and text.inc files.
+	if !strings.HasSuffix(fileUri, ".pory") {
+		s.connection.Notify(ctx, "textDocument/publishDiagnostics", diagnostics)
+		return nil
 	}
 	content, err := s.getDocumentContent(ctx, fileUri)
 	if err != nil {
