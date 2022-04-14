@@ -200,11 +200,13 @@ func (s *poryscriptServer) onCompletion(ctx context.Context, req lsp.CompletionP
 
 	s.getSymbolsInFile(ctx, string(req.TextDocument.URI))
 	symbols := []parse.Symbol{}
+	s.symbolsMutex.Lock()
 	for _, fileSymbols := range s.cachedSymbols {
 		for _, s := range fileSymbols {
 			symbols = append(symbols, s)
 		}
 	}
+	s.symbolsMutex.Unlock()
 
 	completionItems := []lsp.CompletionItem{}
 	for _, command := range commands {
@@ -238,11 +240,14 @@ func (s *poryscriptServer) onDefinition(ctx context.Context, req lsp.DefinitionP
 
 	s.getSymbolsInFile(ctx, string(req.TextDocument.URI))
 	symbols := map[string]parse.Symbol{}
+	s.symbolsMutex.Lock()
 	for _, fileSymbols := range s.cachedSymbols {
 		for _, s := range fileSymbols {
 			symbols[s.Name] = s
 		}
 	}
+	s.symbolsMutex.Unlock()
+
 	if s, ok := symbols[token]; ok {
 		return []lsp.Location{s.ToLocation()}, nil
 	}
@@ -359,11 +364,13 @@ func (s *poryscriptServer) onSemanticTokensFull(ctx context.Context, req lsp.Sem
 	miscTokens, _ := s.getMiscTokens(ctx, string(req.TextDocument.URI))
 	s.getSymbolsInFile(ctx, string(req.TextDocument.URI))
 	symbols := map[string]parse.Symbol{}
+	s.symbolsMutex.Lock()
 	for _, fileSymbols := range s.cachedSymbols {
 		for _, s := range fileSymbols {
 			symbols[s.Name] = s
 		}
 	}
+	s.symbolsMutex.Unlock()
 
 	// TODO: use strongly-typed token types for AddToken(), rather than hardcoded integers
 	builder := lsp.SemanticTokenBuilder{}
