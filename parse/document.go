@@ -105,12 +105,12 @@ func GetCommandCallParts(content string, line int, column int) (CommandCallParts
 	if openParen == nil {
 		return CommandCallParts{}, fmt.Errorf("line %d doesn't have an open parenthesis", line)
 	}
-
 	i--
+	cmdEnd := i
 	for i >= 0 && wordRe.MatchString(string(l[i])) {
 		i--
 	}
-	if i < 0 {
+	if i == cmdEnd {
 		return CommandCallParts{}, fmt.Errorf("line %d had no command before the parenthesis", line)
 	}
 	commandName := l[i+1 : openParen.Character]

@@ -263,8 +263,9 @@ func (s *poryscriptServer) onDefinition(ctx context.Context, req lsp.DefinitionP
 // Handles an incoming LSP 'textDocument/signatureHelp' request.
 // https://microsoft.github.io/language-server-protocol/specifications/specification-current/#textDocument_signatureHelp
 func (s *poryscriptServer) onSignatureHelp(ctx context.Context, req lsp.SignatureHelpParams) (lsp.SignatureHelp, error) {
-	content, err := s.getDocumentContent(ctx, string(req.TextDocument.URI))
-	if err != nil {
+	uri, _ := url.QueryUnescape(string(req.TextDocument.URI))
+	var content string
+	if err := s.connection.Call(ctx, "poryscript/readfs", uri, &content); err != nil {
 		return lsp.SignatureHelp{}, err
 	}
 
