@@ -50,8 +50,8 @@ func (s *poryscriptServer) validatePoryscriptFile(ctx context.Context, fileUri s
 		diagnostics.Diagnostics = append(diagnostics.Diagnostics,
 			lsp.Diagnostic{
 				Range: lsp.Range{
-					Start: lsp.Position{Line: parsedErr.LineNumberStart - 1, Character: parsedErr.CharStart},
-					End:   lsp.Position{Line: parsedErr.LineNumberEnd - 1, Character: parsedErr.CharEnd},
+					Start: lsp.Position{Line: parsedErr.LineNumberStart - 1, Character: parsedErr.Utf8CharStart},
+					End:   lsp.Position{Line: parsedErr.LineNumberEnd - 1, Character: parsedErr.Utf8CharEnd},
 				},
 				Severity: lsp.Error,
 				Source:   "Poryscript",
@@ -108,8 +108,8 @@ func (s *poryscriptServer) getScriptWarnings(ctx context.Context, fileUri string
 				diagnostics = append(diagnostics,
 					lsp.Diagnostic{
 						Range: lsp.Range{
-							Start: lsp.Position{Line: cmd.Token.LineNumber - 1, Character: cmd.Token.StartCharIndex},
-							End:   lsp.Position{Line: cmd.Token.EndLineNumber - 1, Character: cmd.Token.EndCharIndex},
+							Start: lsp.Position{Line: cmd.Token.LineNumber - 1, Character: cmd.Token.StartUtf8CharIndex},
+							End:   lsp.Position{Line: cmd.Token.EndLineNumber - 1, Character: cmd.Token.EndUtf8CharIndex},
 						},
 						Severity: lsp.Warning,
 						Source:   "Poryscript",
@@ -130,8 +130,8 @@ func (s *poryscriptServer) getMovementWarnings(ctx context.Context, fileUri stri
 			diagnostics = append(diagnostics,
 				lsp.Diagnostic{
 					Range: lsp.Range{
-						Start: lsp.Position{Line: cmd.LineNumber - 1, Character: cmd.StartCharIndex},
-						End:   lsp.Position{Line: cmd.EndLineNumber - 1, Character: cmd.EndCharIndex},
+						Start: lsp.Position{Line: cmd.LineNumber - 1, Character: cmd.StartUtf8CharIndex},
+						End:   lsp.Position{Line: cmd.EndLineNumber - 1, Character: cmd.EndUtf8CharIndex},
 					},
 					Severity: lsp.Warning,
 					Source:   "Poryscript",

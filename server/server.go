@@ -381,36 +381,36 @@ func (s *poryscriptServer) onSemanticTokensFull(ctx context.Context, req lsp.Sem
 			if t.Literal != "switch" && t.Literal != "case" {
 				switch command.CompletionKind {
 				case lsp.CIKFunction:
-					builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 1, 0)
+					builder.AddToken(t.LineNumber-1, t.StartUtf8CharIndex, t.EndUtf8CharIndex-t.StartUtf8CharIndex, 1, 0)
 				case lsp.CIKConstant:
-					builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 0, 0)
+					builder.AddToken(t.LineNumber-1, t.StartUtf8CharIndex, t.EndUtf8CharIndex-t.StartUtf8CharIndex, 0, 0)
 				}
 			}
 		}
 
 		if constant, ok := constants[t.Literal]; ok {
 			if t.LineNumber-1 != constant.Position.Line {
-				builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 2, 0)
+				builder.AddToken(t.LineNumber-1, t.StartUtf8CharIndex, t.EndUtf8CharIndex-t.StartUtf8CharIndex, 2, 0)
 			}
 		}
 
 		if symbol, ok := symbols[t.Literal]; ok {
 			switch symbol.Kind {
 			case parse.SymbolKindScript, parse.SymbolKindMapScripts:
-				builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 1, 0)
+				builder.AddToken(t.LineNumber-1, t.StartUtf8CharIndex, t.EndUtf8CharIndex-t.StartUtf8CharIndex, 1, 0)
 			case parse.SymbolKindMovementScript, parse.SymbolKindText:
-				builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 3, 0)
+				builder.AddToken(t.LineNumber-1, t.StartUtf8CharIndex, t.EndUtf8CharIndex-t.StartUtf8CharIndex, 3, 0)
 			}
 		}
 
 		if miscToken, ok := miscTokens[t.Literal]; ok {
 			switch miscToken.Type {
 			case "special":
-				builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 1, 0)
+				builder.AddToken(t.LineNumber-1, t.StartUtf8CharIndex, t.EndUtf8CharIndex-t.StartUtf8CharIndex, 1, 0)
 			case "define":
-				builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 2, 0)
+				builder.AddToken(t.LineNumber-1, t.StartUtf8CharIndex, t.EndUtf8CharIndex-t.StartUtf8CharIndex, 2, 0)
 			default:
-				builder.AddToken(t.LineNumber-1, t.StartCharIndex, t.EndCharIndex-t.StartCharIndex, 0, 0)
+				builder.AddToken(t.LineNumber-1, t.StartUtf8CharIndex, t.EndUtf8CharIndex-t.StartUtf8CharIndex, 0, 0)
 			}
 		}
 	}
