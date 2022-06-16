@@ -1,8 +1,8 @@
 github.com/gorilla/websocket v1.4.1/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
 github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
-github.com/huderlem/poryscript v0.0.0-20220520165638-606b630d24b0 h1:h5RaUnhIwhK2gUWGCQoICvQEH7pR7x0h7SzOwPXkut0=
-github.com/huderlem/poryscript v0.0.0-20220520165638-606b630d24b0/go.mod h1:MnP/SQUqwI0gdrSC388x39hss09TCEXQ/mCgDSWVWDE=
+github.com/huderlem/poryscript v0.0.0-20220616161836-9b87d903e023 h1:y2GEjiYsEOBom8rEtMI7CRIUbBHEWiGo1+BDSNxMfr8=
+github.com/huderlem/poryscript v0.0.0-20220616161836-9b87d903e023/go.mod h1:MnP/SQUqwI0gdrSC388x39hss09TCEXQ/mCgDSWVWDE=
 github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d h1:afLbh+ltiygTOB37ymZVwKlJwWZn+86syPTbrrOAydY=
 github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d/go.mod h1:SULmZY7YNBsvNiQbrb/BEDdEJ84TGnfyUQxaHt8t8rY=
 github.com/sourcegraph/jsonrpc2 v0.1.0 h1:ohJHjZ+PcaLxDUjqk2NC3tIGsVa5bXThe1ZheSXOjuk=
