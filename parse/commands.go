@@ -308,6 +308,13 @@ var KeywordCommands = []Command{
 		InsertText:     "movement ${0:MyMovement} {\n    \n}",
 	},
 	{
+		Name:           "mart",
+		Detail:         "Mart (Poryscript)",
+		Kind:           CommandPoryscriptKeyword,
+		CompletionKind: lsp.CIKClass,
+		InsertText:     "mart ${0:MyMart} {\n    \n}",
+	},
+	{
 		Name:           "mapscripts",
 		Detail:         "Mapscript Section (Poryscript)",
 		Kind:           CommandPoryscriptKeyword,

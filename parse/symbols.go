@@ -24,6 +24,7 @@ const (
 	SymbolKindScript
 	SymbolKindMapScripts
 	SymbolKindMovementScript
+	SymbolKindMart
 	SymbolKindText
 )
 
@@ -36,6 +37,8 @@ func (k SymbolKind) getDetail() string {
 		return "Map Scripts"
 	case SymbolKindMovementScript:
 		return "Movement Script"
+	case SymbolKindMart:
+		return "Mart Items"
 	case SymbolKindText:
 		return "Text"
 	default:
@@ -48,7 +51,7 @@ func (k SymbolKind) getCompletionItemKind() lsp.CompletionItemKind {
 	switch k {
 	case SymbolKindScript, SymbolKindMapScripts:
 		return lsp.CIKFunction
-	case SymbolKindMovementScript, SymbolKindText:
+	case SymbolKindMovementScript, SymbolKindMart, SymbolKindText:
 		return lsp.CIKField
 	default:
 		return lsp.CIKFunction
@@ -89,6 +92,10 @@ var symbolRegexes = []struct {
 	{
 		re:   regexp.MustCompile(`\bmovement\s+(\w+)\s*\{`),
 		kind: SymbolKindMovementScript,
+	},
+	{
+		re:   regexp.MustCompile(`\bmart\s+(\w+)\s*\{`),
+		kind: SymbolKindMart,
 	},
 	{
 		re:   regexp.MustCompile(`\bmapscripts\s+(\w+)\s*\{`),
