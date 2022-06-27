@@ -14,7 +14,13 @@ func TestParseSymbols(t *testing.T) {
 	}
 text MyText { "foo" } text MyText2 {"bar"}
   	mapscripts MyMapScripts {} movement MyMovement {}
-	mart MyMart {}`
+	mart MyMart {}
+script MyScript2 {
+	switch (var(VAR_1)) { case 1: }
+MyLabel:
+	MyOtherLabel ( local ) :
+	release
+}`
 	expected := []Symbol{
 		{Name: "MyScript", Position: lsp.Position{Line: 1, Character: 8}, Uri: "test.pory", Kind: SymbolKindScript},
 		{Name: "MyText", Position: lsp.Position{Line: 4, Character: 5}, Uri: "test.pory", Kind: SymbolKindText},
@@ -22,6 +28,9 @@ text MyText { "foo" } text MyText2 {"bar"}
 		{Name: "MyMovement", Position: lsp.Position{Line: 5, Character: 39}, Uri: "test.pory", Kind: SymbolKindMovementScript},
 		{Name: "MyMapScripts", Position: lsp.Position{Line: 5, Character: 14}, Uri: "test.pory", Kind: SymbolKindMapScripts},
 		{Name: "MyMart", Position: lsp.Position{Line: 6, Character: 6}, Uri: "test.pory", Kind: SymbolKindMart},
+		{Name: "MyScript2", Position: lsp.Position{Line: 7, Character: 7}, Uri: "test.pory", Kind: SymbolKindScript},
+		{Name: "MyLabel", Position: lsp.Position{Line: 9, Character: 0}, Uri: "test.pory", Kind: SymbolKindLabel},
+		{Name: "MyOtherLabel", Position: lsp.Position{Line: 10, Character: 1}, Uri: "test.pory", Kind: SymbolKindLabel},
 	}
 	results := ParseSymbols(input, "test.pory")
 	if len(expected) != len(results) {

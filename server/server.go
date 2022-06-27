@@ -398,7 +398,7 @@ func (s *poryscriptServer) onSemanticTokensFull(ctx context.Context, req lsp.Sem
 			switch symbol.Kind {
 			case parse.SymbolKindScript, parse.SymbolKindMapScripts:
 				builder.AddToken(t.LineNumber-1, t.StartUtf8CharIndex, t.EndUtf8CharIndex-t.StartUtf8CharIndex, 1, 0)
-			case parse.SymbolKindMovementScript, parse.SymbolKindMart, parse.SymbolKindText:
+			case parse.SymbolKindMovementScript, parse.SymbolKindMart, parse.SymbolKindText, parse.SymbolKindLabel:
 				builder.AddToken(t.LineNumber-1, t.StartUtf8CharIndex, t.EndUtf8CharIndex-t.StartUtf8CharIndex, 3, 0)
 			}
 		}
