@@ -289,6 +289,9 @@ func (s *poryscriptServer) onSignatureHelp(ctx context.Context, req lsp.Signatur
 	for paramId < len(callInfo.Commas) && req.Position.Character > callInfo.Commas[paramId].Character {
 		paramId++
 	}
+	if paramId >= len(command.Parameters) && command.HasVarargParam() {
+		paramId = len(command.Parameters) - 1
+	}
 
 	return lsp.SignatureHelp{
 		ActiveParameter: paramId,

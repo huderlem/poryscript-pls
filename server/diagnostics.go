@@ -97,7 +97,7 @@ func (s *poryscriptServer) getScriptWarnings(ctx context.Context, fileUri string
 			var message string
 			if len(cmd.Args) < numRequiredParams {
 				message = fmt.Sprintf("%s requires at least %s, but %s provided", cmd.Name.Value, getArgumentsString(numRequiredParams), getWasWereString(len(cmd.Args)))
-			} else if len(cmd.Args) > len(command.Parameters) {
+			} else if len(cmd.Args) > len(command.Parameters) && !command.HasVarargParam() {
 				word := "were"
 				if len(cmd.Args) == 1 {
 					word = "was"

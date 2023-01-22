@@ -44,6 +44,7 @@ const (
 	CommandParamRequired
 	CommandParamDefault
 	CommandParamOptional
+	CommandParamVarArg
 )
 
 // Returns the lsp.CompletionItem representation of a Command.
@@ -90,14 +91,24 @@ func (c Command) GetParamInformation() []lsp.ParameterInformation {
 	return result
 }
 
+func (c Command) HasVarargParam() bool {
+	numParams := len(c.Parameters)
+	if numParams == 0 {
+		return false
+	}
+	return c.Parameters[numParams-1].Kind == CommandParamVarArg
+}
+
 func (c CommandParam) getLabelName() string {
 	switch c.Kind {
+	case CommandParamRequired:
+		return c.Name
 	case CommandParamDefault:
 		return fmt.Sprintf("[%s=%s]", c.Name, c.Default)
 	case CommandParamOptional:
 		return fmt.Sprintf("[%s]", c.Name)
-	case CommandParamRequired:
-		return c.Name
+	case CommandParamVarArg:
+		return fmt.Sprintf("[%s=...]", c.Name)
 	default:
 		return ""
 	}
@@ -118,6 +129,11 @@ func (c CommandParam) getParamKindLabel() lsp.MarkupContent {
 	case CommandParamRequired:
 		return lsp.MarkupContent{
 			Value: fmt.Sprintf("%s *Required*", c.Name),
+			Kind:  lsp.MarkupKindMarkdown,
+		}
+	case CommandParamVarArg:
+		return lsp.MarkupContent{
+			Value: fmt.Sprintf("%s *Vararg*", c.Name),
 			Kind:  lsp.MarkupKindMarkdown,
 		}
 	default:
@@ -171,6 +187,8 @@ func parseMacroParameters(input string) []CommandParam {
 		kind := CommandParamOptional
 		if match[2] == ":" && match[3] == "req" {
 			kind = CommandParamRequired
+		} else if match[2] == ":" && match[3] == "vararg" {
+			kind = CommandParamVarArg
 		} else if match[2] == "=" {
 			kind = CommandParamDefault
 			defaultValue = match[3]
