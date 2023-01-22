@@ -20,27 +20,13 @@ Clone the Poryscript Language Extension repository.
 git clone https://github.com/SBird1337/poryscript-language
 ```
 
-In `client/src/extension.ts`, replace the `serverOptions` with a direct call to the Poryscript language server binary (`poryscript-pls`).
+In `client/src/extension.ts`, replace the executable path with hardcoded paths to your Poryscript language server binary (`poryscript-pls`).
 ```ts
-const serverOptions: ServerOptions = async () => {
-    const binPath = "path\\to\\poryscript-pls.exe";
-    if (!binPath) {
-        throw new Error("Couldn't fetch poryscript-pls binary");
-    }
-    return child_process.spawn(binPath);
-};
+const debugPlsPath = "your\\path\\to\\poryscript-pls.exe";
+const releasePlsPath = "your\\path\\to\\poryscript-pls.exe";
 ```
 
-Also in `client/src/extension.ts`, replace the `poryscript/getfileuri` handler with the following:
-```ts
-client.onRequest("poryscript/getfileuri", file => {
-    return pathToFileURL(path.join(workspace.workspaceFolders[0].uri.fsPath, file)).toString();
-});
-```
-
-This will cause the VS Code extension client to talk to the `poryscript-pls` server via `stdout` and `stdin`, rather than communicating via IPC with the Node server.
-
-Launch the extension as usual to test the `poryscript-pls` server.
+Launch the extension as usual (e.g. pressing `F5`) to test the `poryscript-pls` server.  **Windows Note**: It doesn't seem to load properly if the project you load in the `Extension Development Host` is located in the WSL filesystem, so make sure you're testing in a normal Windows environment.
 
 ## Notes
 
