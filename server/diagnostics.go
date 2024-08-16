@@ -33,7 +33,10 @@ func (s *poryscriptServer) validatePoryscriptFile(ctx context.Context, fileUri s
 		return err
 	}
 
-	p := parser.NewLintParser(lexer.New(content))
+	// TODO: should this potential error be ignored?
+	commandConfig, _ := s.getAutovarCommands(ctx, fileUri)
+
+	p := parser.NewLintParser(lexer.New(content), commandConfig)
 	program, err := p.ParseProgram()
 	if err == nil {
 		// The poryscript file is syntactically correct. Check for warnings.

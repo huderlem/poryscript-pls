@@ -45,7 +45,7 @@ jobs:
       run: mv poryscript-pls poryscript-pls-linux
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: poryscript-pls-linux
@@ -79,7 +79,7 @@ jobs:
       run: mv poryscript-pls poryscript-pls-mac
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: poryscript-pls-mac
@@ -113,7 +113,7 @@ jobs:
       run: mv poryscript-pls.exe poryscript-pls-windows.exe
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: poryscript-pls-windows.exe

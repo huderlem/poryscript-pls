@@ -26,6 +26,8 @@ type PoryscriptSettings struct {
 	CommandIncludes []string `json:"commandIncludes"`
 	// Filepaths for constant and symbol definitions.
 	SymbolIncludes []TokenIncludeSetting `json:"symbolIncludes"`
+	// Filepath for command config.
+	CommandConfigFilepath string `json:"commandConfigFilepath"`
 }
 
 type TokenIncludeSetting struct {
@@ -35,8 +37,9 @@ type TokenIncludeSetting struct {
 }
 
 var defaultPoryscriptSettings = PoryscriptSettings{
-	CommandIncludes: []string{"asm/macros/event.inc", "asm/macros/movement.inc"},
-	SymbolIncludes:  []TokenIncludeSetting{},
+	CommandIncludes:       []string{"asm/macros/event.inc", "asm/macros/movement.inc"},
+	SymbolIncludes:        []TokenIncludeSetting{},
+	CommandConfigFilepath: "tools/poryscript/command_config.json",
 }
 
 func New() Config {

@@ -2,9 +2,11 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"net/url"
 
 	"github.com/huderlem/poryscript-pls/parse"
+	"github.com/huderlem/poryscript/parser"
 )
 
 // Gets the aggregate list of Commands from the collection of files that define
@@ -64,6 +66,44 @@ func (s *poryscriptServer) getAndCacheCommandsInFile(ctx context.Context, uri st
 	}
 	s.cachedCommands[uri] = commandSet
 	return commandSet, nil
+}
+
+func (s *poryscriptServer) getAutovarCommands(ctx context.Context, uri string) (parser.CommandConfig, error) {
+	s.commandConfigMutex.Lock()
+	defer s.commandConfigMutex.Unlock()
+
+	uri, _ = url.QueryUnescape(uri)
+	if autovarCommands, ok := s.cachedAutovarCommands[uri]; ok {
+		return autovarCommands, nil
+	}
+	return s.getAndCacheAutovarCommands(ctx, uri)
+}
+
+func (s *poryscriptServer) getAndCacheAutovarCommands(ctx context.Context, uri string) (parser.CommandConfig, error) {
+	settings, err := s.config.GetFileSettings(ctx, s.connection, uri)
+	if err != nil {
+		return parser.CommandConfig{}, err
+	}
+
+	if len(settings.CommandConfigFilepath) == 0 {
+		return parser.CommandConfig{}, nil
+	}
+
+	commandConfigUri, _ := url.QueryUnescape(settings.CommandConfigFilepath)
+	var content string
+	if err := s.connection.Call(ctx, "poryscript/readfile", commandConfigUri, &content); err != nil {
+		return parser.CommandConfig{}, err
+	}
+	if !s.config.HasWorkspaceFolderCapability {
+		return parser.CommandConfig{}, nil
+	}
+
+	var config parser.CommandConfig
+	if err := json.Unmarshal([]byte(content), &config); err != nil {
+		return parser.CommandConfig{}, err
+	}
+
+	return config, nil
 }
 
 // Gets the list of poryscript constants from the given file uri. The constants

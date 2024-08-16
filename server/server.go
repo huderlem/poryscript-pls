@@ -12,6 +12,7 @@ import (
 	"github.com/huderlem/poryscript-pls/lsp"
 	"github.com/huderlem/poryscript-pls/parse"
 	"github.com/huderlem/poryscript/lexer"
+	"github.com/huderlem/poryscript/parser"
 	"github.com/huderlem/poryscript/token"
 	"github.com/sourcegraph/jsonrpc2"
 )
@@ -103,18 +104,20 @@ func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn,
 // poryscriptServer is the main handler for the Poryscript LSP server. It implements the
 // LspServer interface.
 type poryscriptServer struct {
-	connection       *jsonrpc2.Conn
-	config           config.Config
-	cachedDocuments  map[string]string
-	cachedCommands   map[string]map[string]parse.Command
-	cachedConstants  map[string]map[string]parse.ConstantSymbol
-	cachedSymbols    map[string]map[string]parse.Symbol
-	cachedMiscTokens map[string]map[string]parse.MiscToken
-	documentsMutex   sync.Mutex
-	commandsMutex    sync.Mutex
-	constantsMutex   sync.Mutex
-	symbolsMutex     sync.Mutex
-	miscTokensMutex  sync.Mutex
+	connection            *jsonrpc2.Conn
+	config                config.Config
+	cachedDocuments       map[string]string
+	cachedCommands        map[string]map[string]parse.Command
+	cachedConstants       map[string]map[string]parse.ConstantSymbol
+	cachedSymbols         map[string]map[string]parse.Symbol
+	cachedMiscTokens      map[string]map[string]parse.MiscToken
+	cachedAutovarCommands map[string]parser.CommandConfig
+	documentsMutex        sync.Mutex
+	commandsMutex         sync.Mutex
+	constantsMutex        sync.Mutex
+	symbolsMutex          sync.Mutex
+	miscTokensMutex       sync.Mutex
+	commandConfigMutex    sync.Mutex
 }
 
 // Runs the LSP server indefinitely.
