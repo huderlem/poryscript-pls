@@ -377,7 +377,7 @@ var KeywordCommands = []Command{
 		Detail:         "Inline Moves",
 		Kind:           CommandPoryscriptKeyword,
 		CompletionKind: lsp.CIKFunction,
-		InsertText:     "moves(\"$0\")",
+		InsertText:     "moves($0)",
 	},
 	{
 		Name:           "var",
