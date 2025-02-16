@@ -8,7 +8,7 @@ import (
 	"github.com/huderlem/poryscript-pls/server"
 )
 
-const version = "1.0.9"
+const version = "1.0.10"
 
 func parseOptions() {
 	helpPtr := flag.Bool("h", false, "show poryscript-pls help information")
