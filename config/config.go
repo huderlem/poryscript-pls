@@ -28,6 +28,8 @@ type PoryscriptSettings struct {
 	SymbolIncludes []TokenIncludeSetting `json:"symbolIncludes"`
 	// Filepath for command config.
 	CommandConfigFilepath string `json:"commandConfigFilepath"`
+	// Filepath for font width config JSON file (used for line-length validation).
+	FontConfigFilepath string `json:"fontConfigFilepath"`
 }
 
 type TokenIncludeSetting struct {
@@ -40,6 +42,7 @@ var defaultPoryscriptSettings = PoryscriptSettings{
 	CommandIncludes:       []string{"asm/macros/event.inc", "asm/macros/movement.inc"},
 	SymbolIncludes:        []TokenIncludeSetting{},
 	CommandConfigFilepath: "tools/poryscript/command_config.json",
+	FontConfigFilepath:    "tools/poryscript/font_config.json",
 }
 
 func New() Config {

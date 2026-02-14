@@ -36,7 +36,10 @@ func (s *poryscriptServer) validatePoryscriptFile(ctx context.Context, fileUri s
 	// TODO: should this potential error be ignored?
 	commandConfig, _ := s.getAutovarCommands(ctx, fileUri)
 
-	p := parser.NewLintParser(lexer.New(content), commandConfig)
+	settings, _ := s.config.GetFileSettings(ctx, s.connection, fileUri)
+	fontConfigFilepath := settings.FontConfigFilepath
+
+	p := parser.NewLintParser(lexer.New(content), commandConfig, fontConfigFilepath, "", 0)
 	program, err := p.ParseProgram()
 	if err == nil {
 		// The poryscript file is syntactically correct. Check for warnings.
@@ -69,6 +72,19 @@ func (s *poryscriptServer) validatePoryscriptFile(ctx context.Context, fileUri s
 
 func (s *poryscriptServer) getPoryscriptWarnings(ctx context.Context, program *ast.Program, fileUri string) []lsp.Diagnostic {
 	diagnostics := []lsp.Diagnostic{}
+	// Convert parser-generated warnings (e.g. line-length validation) to LSP diagnostics.
+	for _, w := range program.Warnings {
+		diagnostics = append(diagnostics, lsp.Diagnostic{
+			Range: lsp.Range{
+				Start: lsp.Position{Line: w.LineNumberStart - 1, Character: w.Utf8CharStart},
+				End:   lsp.Position{Line: w.LineNumberEnd - 1, Character: w.Utf8CharEnd},
+			},
+			Severity: lsp.Warning,
+			Source:   "Poryscript",
+			Message:  w.Message,
+			Code:     "warning-lineTooLong",
+		})
+	}
 	for _, topStatement := range program.TopLevelStatements {
 		switch statement := topStatement.(type) {
 		case *ast.ScriptStatement:
