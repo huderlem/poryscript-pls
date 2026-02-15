@@ -325,7 +325,7 @@ type ServerCapabilities struct {
 	DocumentSymbolProvider           bool                             `json:"documentSymbolProvider,omitempty"`
 	WorkspaceSymbolProvider          bool                             `json:"workspaceSymbolProvider,omitempty"`
 	ImplementationProvider           bool                             `json:"implementationProvider,omitempty"`
-	CodeActionProvider               bool                             `json:"codeActionProvider,omitempty"`
+	CodeActionProvider               *CodeActionOptions               `json:"codeActionProvider,omitempty"`
 	CodeLensProvider                 *CodeLensOptions                 `json:"codeLensProvider,omitempty"`
 	DocumentFormattingProvider       bool                             `json:"documentFormattingProvider,omitempty"`
 	DocumentRangeFormattingProvider  bool                             `json:"documentRangeFormattingProvider,omitempty"`
@@ -359,6 +359,10 @@ type CompletionOptions struct {
 type DocumentOnTypeFormattingOptions struct {
 	FirstTriggerCharacter string   `json:"firstTriggerCharacter"`
 	MoreTriggerCharacter  []string `json:"moreTriggerCharacter,omitempty"`
+}
+
+type CodeActionOptions struct {
+	ResolveProvider bool `json:"resolveProvider,omitempty"`
 }
 
 type CodeLensOptions struct {
@@ -789,6 +793,16 @@ type CodeActionParams struct {
 	TextDocument TextDocumentIdentifier `json:"textDocument"`
 	Range        Range                  `json:"range"`
 	Context      CodeActionContext      `json:"context"`
+}
+
+type CodeAction struct {
+	Title       string          `json:"title"`
+	Kind        CodeActionKind  `json:"kind,omitempty"`
+	Diagnostics []Diagnostic    `json:"diagnostics,omitempty"`
+	IsPreferred bool            `json:"isPreferred,omitempty"`
+	Edit        *WorkspaceEdit  `json:"edit,omitempty"`
+	Command     *Command        `json:"command,omitempty"`
+	Data        json.RawMessage `json:"data,omitempty"`
 }
 
 type CodeLensParams struct {

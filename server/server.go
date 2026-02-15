@@ -72,6 +72,18 @@ func (server *poryscriptServer) handle(ctx context.Context, conn *jsonrpc2.Conn,
 			return nil, err
 		}
 		return server.onSemanticTokensFull(ctx, params)
+	case "textDocument/codeAction":
+		params := lsp.CodeActionParams{}
+		if err := json.Unmarshal(*request.Params, &params); err != nil {
+			return nil, err
+		}
+		return server.onCodeAction(ctx, params)
+	case "codeAction/resolve":
+		params := lsp.CodeAction{}
+		if err := json.Unmarshal(*request.Params, &params); err != nil {
+			return nil, err
+		}
+		return server.onCodeActionResolve(ctx, params)
 	case "textDocument/didOpen":
 		params := lsp.DidOpenTextDocumentParams{}
 		if err := json.Unmarshal(*request.Params, &params); err != nil {
@@ -151,6 +163,9 @@ func (s *poryscriptServer) onInitialize(ctx context.Context, params lsp.Initiali
 				},
 			},
 			DefinitionProvider: true,
+			CodeActionProvider: &lsp.CodeActionOptions{
+				ResolveProvider: true,
+			},
 		},
 	}
 }
