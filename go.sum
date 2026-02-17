@@ -9,6 +9,10 @@ github.com/huderlem/poryscript v0.0.0-20250216172335-2a49a7d45796 h1:fwMWcwpD6zQ
 github.com/huderlem/poryscript v0.0.0-20250216172335-2a49a7d45796/go.mod h1:MnP/SQUqwI0gdrSC388x39hss09TCEXQ/mCgDSWVWDE=
 github.com/huderlem/poryscript v0.0.0-20260215185010-57432cbb3784 h1:1Ma7hmMuSqZjNyKwW0bWNLz/D4pAkPSYIJ9G/hHS8Ko=
 github.com/huderlem/poryscript v0.0.0-20260215185010-57432cbb3784/go.mod h1:MnP/SQUqwI0gdrSC388x39hss09TCEXQ/mCgDSWVWDE=
+github.com/huderlem/poryscript v0.0.0-20260215190119-2ed30c2d03f9 h1:hKy3DgRpOgL6rPZTg8hUcE6b07TFAdzwAbKOSjynnLI=
+github.com/huderlem/poryscript v0.0.0-20260215190119-2ed30c2d03f9/go.mod h1:MnP/SQUqwI0gdrSC388x39hss09TCEXQ/mCgDSWVWDE=
+github.com/huderlem/poryscript v0.0.0-20260217192444-22510edf195c h1:ORNdmVJ2eDOCrJXH02+td3FJ1IcrUvbf61ZS/bEB0/Y=
+github.com/huderlem/poryscript v0.0.0-20260217192444-22510edf195c/go.mod h1:MnP/SQUqwI0gdrSC388x39hss09TCEXQ/mCgDSWVWDE=
 github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d h1:afLbh+ltiygTOB37ymZVwKlJwWZn+86syPTbrrOAydY=
 github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d/go.mod h1:SULmZY7YNBsvNiQbrb/BEDdEJ84TGnfyUQxaHt8t8rY=
 github.com/sourcegraph/go-lsp v0.0.0-20240223163137-f80c5dd31dfd h1:Dq5WSzWsP1TbVi10zPWBI5LKEBDg4Y1OhWEph1wr5WQ=
