@@ -84,6 +84,18 @@ func (s *poryscriptServer) getPoryscriptWarnings(ctx context.Context, program *a
 			Message:  w.Message,
 			Code:     "warning-lineTooLong",
 		})
+		if w.Utf8CharStart > 0 {
+			diagnostics = append(diagnostics, lsp.Diagnostic{
+				Range: lsp.Range{
+					Start: lsp.Position{Line: w.LineNumberStart - 1, Character: 0},
+					End:   lsp.Position{Line: w.LineNumberEnd - 1, Character: w.Utf8CharStart},
+				},
+				Severity: lsp.Hint,
+				Source:   "Poryscript",
+				Message:  w.Message,
+				Code:     "safe-lineTooLong",
+			})
+		}
 	}
 	for _, topStatement := range program.TopLevelStatements {
 		switch statement := topStatement.(type) {
