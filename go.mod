@@ -3,7 +3,7 @@ module github.com/huderlem/poryscript-pls
 go 1.17
 
 require (
-	github.com/huderlem/poryscript v0.0.0-20260405144246-ae917083df2b
+	github.com/huderlem/poryscript v0.0.0-20261004142702-c32481161c76
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/jsonrpc2 v0.1.0
 )
